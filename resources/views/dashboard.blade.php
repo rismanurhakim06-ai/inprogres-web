@@ -26,9 +26,9 @@
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <div class="border-b border-gray-200 px-5 py-4"><h3 class="font-semibold text-gray-900">Semua tiket</h3></div>
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[1040px] text-left text-sm">
+                <table class="w-full min-w-[1160px] text-left text-sm">
                     <thead class="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
-                        <tr><th class="px-5 py-3">Tiket / Pengaju</th><th class="px-5 py-3">Ajuan</th><th class="px-5 py-3">Target</th><th class="px-5 py-3">Status</th><th class="px-5 py-3">Tanggal selesai</th><th class="px-5 py-3">Aksi</th></tr>
+                        <tr><th class="px-5 py-3">Nomor tiket</th><th class="px-5 py-3">Nama pengaju</th><th class="px-5 py-3">No. WhatsApp</th><th class="px-5 py-3">Ajuan</th><th class="px-5 py-3">Target</th><th class="px-5 py-3">Status</th><th class="px-5 py-3">Tanggal selesai</th><th class="px-5 py-3">Aksi</th></tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse ($tickets as $ticket)
@@ -39,7 +39,9 @@
                                 default => 'priority-default',
                             })
                             <tr class="priority-row {{ $priorityClass }}">
-                                <td class="px-5 py-4"><strong class="block text-gray-900">{{ $ticket->ticket_number }}</strong><span class="text-gray-500">{{ $ticket->requester_name }} - {{ $ticket->created_at->timezone('Asia/Jakarta')->format('d M Y') }}</span></td>
+                                <td class="px-5 py-4"><strong class="block text-gray-900">{{ $ticket->ticket_number }}</strong><span class="text-gray-500">{{ $ticket->created_at->timezone('Asia/Jakarta')->format('d M Y') }}</span></td>
+                                <td class="px-5 py-4 font-medium text-gray-900">{{ $ticket->requester_name }}</td>
+                                <td class="whitespace-nowrap px-5 py-4 text-gray-700">{{ $ticket->whatsapp_number }}</td>
                                 <td class="max-w-xs px-5 py-4 text-gray-700">{{ \Illuminate\Support\Str::limit($ticket->description, 80) }}</td>
                                 <td class="px-5 py-4 text-gray-700">{{ $ticket->target->label() }}</td>
                                 <td class="px-5 py-4"><span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">{{ $ticket->status->label() }}</span></td>
@@ -61,7 +63,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="px-5 py-12 text-center text-gray-500">Belum ada pengajuan masuk.</td></tr>
+                            <tr><td colspan="8" class="px-5 py-12 text-center text-gray-500">Belum ada pengajuan masuk.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
