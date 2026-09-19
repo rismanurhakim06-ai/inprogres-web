@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Models\Ticket;
 use App\Models\User;
@@ -59,6 +60,21 @@ class TicketWorkflowTest extends TestCase
         $this->get(route('home', ['ticket' => $ticket->ticket_number]))
             ->assertOk()
             ->assertSee('Tanggal selesai: '.$completedAt->translatedFormat('d M Y, H:i'));
+    }
+
+    public function test_admin_dashboard_colors_tickets_by_priority(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        Ticket::factory()->create(['priority' => TicketPriority::Relaxed]);
+        Ticket::factory()->create(['priority' => TicketPriority::Urgent]);
+        Ticket::factory()->create(['priority' => TicketPriority::Critical]);
+
+        $response = $this->actingAs($admin)->get(route('dashboard'));
+
+        $response->assertOk()
+            ->assertSee('priority-row priority-relaxed', false)
+            ->assertSee('priority-row priority-urgent', false)
+            ->assertSee('priority-row priority-critical', false);
     }
 
     public function test_supervisor_can_delete_a_ticket(): void

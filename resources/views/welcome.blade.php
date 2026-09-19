@@ -40,7 +40,7 @@
                     <div class="input-action"><input id="ticket" name="ticket" value="{{ request('ticket') }}" placeholder="Contoh: INP-260919-AB12C" required><button type="submit" class="icon-button" aria-label="Lacak tiket">→</button></div>
                 </form>
                 @if (request()->filled('ticket'))
-                    @if ($ticket)<div class="ticket-result"><div class="result-head"><span>{{ $ticket->ticket_number }}</span><span class="status-pill status-{{ $ticket->status->value }}">{{ $ticket->status->label() }}</span></div><strong>{{ $ticket->requester_name }}</strong><p>{{ $ticket->description }}</p><small>Diajukan {{ $ticket->created_at->translatedFormat('d M Y, H:i') }} · {{ $ticket->target->label() }}</small><small class="completion-date">Tanggal selesai: {{ $ticket->completed_at?->translatedFormat('d M Y, H:i') ?? 'Belum selesai' }}</small></div>
+                    @if ($ticket)<div class="ticket-result"><div class="result-head"><span>{{ $ticket->ticket_number }}</span><span class="status-pill status-{{ $ticket->status->value }}">{{ $ticket->status->label() }}</span></div><strong>{{ $ticket->requester_name }}</strong><p>{{ $ticket->description }}</p><small>Diajukan {{ $ticket->created_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i') }} WIB · {{ $ticket->target->label() }}</small><small class="completion-date">Tanggal selesai: {{ $ticket->completed_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i') ?? 'Belum selesai' }} WIB</small></div>
                     @else<div class="notice error">Nomor tiket tidak ditemukan. Periksa kembali penulisannya.</div>@endif
                 @endif
             </div>
@@ -60,11 +60,44 @@
     </main>
     <footer class="portal-footer"><span>inprogres / layanan pengajuan</span><span>Respons transparan, langkah terarah.</span></footer>
     <script>
+        async function copyText(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+
+                return true;
+            }
+
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.setAttribute('readonly', '');
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+
+            let copied = false;
+
+            try {
+                copied = document.execCommand('copy');
+            } finally {
+                textArea.remove();
+            }
+
+            return copied;
+        }
+
         document.querySelectorAll('[data-copy-ticket]').forEach((button) => {
             button.addEventListener('click', async () => {
-                await navigator.clipboard.writeText(button.dataset.copyTicket);
                 const label = button.querySelector('[data-copy-label]');
-                label.textContent = 'Tersalin';
+
+                try {
+                    const copied = await copyText(button.dataset.copyTicket);
+
+                    label.textContent = copied ? 'Tersalin' : 'Gagal menyalin';
+                } catch {
+                    label.textContent = 'Gagal menyalin';
+                }
+
                 window.setTimeout(() => { label.textContent = 'Salin tiket'; }, 1800);
             });
         });

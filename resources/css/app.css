@@ -2,6 +2,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+.priority-row > td { transition: background-color .2s ease; }
+.priority-relaxed > td { background-color: #dcfce7; }
+.priority-urgent > td { background-color: #fef3c7; }
+.priority-critical > td { background-color: #fee2e2; }
+.priority-default > td { background-color: #ffffff; }
 :root { --ink: #17251f; --paper: #f4f1e9; --acid: #c7ed52; --line: rgba(23,37,31,.18); --muted: #67736a; }
 * { box-sizing: border-box; } body { margin: 0; font-family: 'Manrope', sans-serif; color: var(--ink); }
 .portal-shell { min-height: 100vh; background: var(--paper); background-image: radial-gradient(rgba(23,37,31,.09) 1px, transparent 1px); background-size: 18px 18px; }
