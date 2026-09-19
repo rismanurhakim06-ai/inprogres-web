@@ -14,7 +14,7 @@
     <main class="portal-main">
         <section class="hero-block">
             <p class="eyebrow">PUSAT LAYANAN DIGITAL</p>
-            <h1>Setiap pengajuan,<br><em>terlihat progresnya.</em></h1>
+            <h1>Setiap pengajuan,<em>terlihat progresnya.</em></h1><br>
             <p class="hero-copy">Kirim pengajuan ke tim yang tepat atau pantau statusnya dengan satu nomor tiket.</p>
         </section>
         @if (session('success'))<div class="notice success">{{ session('success') }}</div>@endif
@@ -43,8 +43,12 @@
                     @if ($ticket)<div class="ticket-result"><div class="result-head"><span>{{ $ticket->ticket_number }}</span><span class="status-pill status-{{ $ticket->status->value }}">{{ $ticket->status->label() }}</span></div><strong>{{ $ticket->requester_name }}</strong><p>{{ $ticket->description }}</p><small>Diajukan {{ $ticket->created_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i') }} WIB · {{ $ticket->target->label() }}</small><small class="completion-date">Tanggal selesai: {{ $ticket->completed_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i') ?? 'Belum selesai' }} WIB</small></div>
                     @else<div class="notice error">Nomor tiket tidak ditemukan. Periksa kembali penulisannya.</div>@endif
                 @endif
+                <button type="button" class="new-ticket-button" data-ticket-toggle aria-expanded="{{ $errors->any() ? 'true' : 'false' }}" aria-controls="new-ticket-panel">
+                    <span>Belum punya tiket?</span> Buat tiket baru <span class="new-ticket-arrow">↘</span>
+                </button>
             </div>
-            <div class="create-panel panel-card">
+            <div id="new-ticket-panel" class="create-panel panel-card" data-ticket-panel @if (!$errors->any()) hidden @endif>
+                <button type="button" class="panel-close" data-ticket-close aria-label="Tutup formulir tiket baru">×</button>
                 <div class="panel-kicker"><span class="step-dot">02</span> BUAT PENGAJUAN</div>
                 <h2>Butuh bantuan?</h2><p class="muted">Ceritakan kebutuhanmu. Kami akan memberi nomor tiket untuk dipantau.</p>
                 <form action="{{ route('tickets.store') }}" method="POST" class="ticket-form">
@@ -100,6 +104,52 @@
 
                 window.setTimeout(() => { label.textContent = 'Salin tiket'; }, 1800);
             });
+        });
+
+        document.querySelectorAll('.ticket-result, .track-panel > .notice.error').forEach((response) => {
+            window.setTimeout(() => {
+                response.classList.add('response-dismissed');
+                window.setTimeout(() => response.remove(), 220);
+            }, 5000);
+        });
+
+        document.querySelectorAll('.ticket-confirmation').forEach((response) => {
+            window.setTimeout(() => {
+                response.classList.add('response-dismissed');
+                window.setTimeout(() => response.remove(), 220);
+            }, 10000);
+        });
+
+        const ticketToggle = document.querySelector('[data-ticket-toggle]');
+        const ticketPanel = document.querySelector('[data-ticket-panel]');
+        const ticketClose = document.querySelector('[data-ticket-close]');
+
+        const closeTicketPanel = () => {
+            ticketPanel.setAttribute('hidden', '');
+            ticketToggle?.setAttribute('aria-expanded', 'false');
+        };
+
+        const toggleTicketPanel = () => {
+            const isHidden = ticketPanel.hasAttribute('hidden');
+
+            ticketPanel.toggleAttribute('hidden', !isHidden);
+            ticketToggle.setAttribute('aria-expanded', String(isHidden));
+
+            if (isHidden) {
+                ticketPanel.querySelector('input, textarea, select')?.focus();
+            }
+        };
+
+        ticketToggle?.addEventListener('click', toggleTicketPanel);
+        ticketClose?.addEventListener('click', () => {
+            closeTicketPanel();
+            ticketToggle?.focus();
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!ticketPanel.hasAttribute('hidden') && !ticketPanel.contains(event.target) && !ticketToggle?.contains(event.target)) {
+                closeTicketPanel();
+            }
         });
     </script>
 </body>
