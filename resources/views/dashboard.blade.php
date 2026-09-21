@@ -9,7 +9,7 @@
         </div>
     </x-slot>
 
-    <div class="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8" x-data="{ showDescription: false, description: '' }">
         @if (session('success'))
             <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
         @endif
@@ -42,7 +42,16 @@
                                 <td class="px-5 py-4"><strong class="block text-gray-900">{{ $ticket->ticket_number }}</strong><span class="text-gray-500">{{ $ticket->created_at->timezone('Asia/Jakarta')->format('d M Y') }}</span></td>
                                 <td class="px-5 py-4 font-medium text-gray-900">{{ $ticket->requester_name }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 text-gray-700">{{ $ticket->whatsapp_number }}</td>
-                                <td class="max-w-xs px-5 py-4 text-gray-700">{{ \Illuminate\Support\Str::limit($ticket->description, 80) }}</td>
+                                <td class="max-w-xs px-5 py-4 text-gray-700">
+                                    <button
+                                        type="button"
+                                        class="block max-w-xs truncate text-left hover:text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                        title="Klik untuk melihat ajuan lengkap"
+                                        @click="description = @js($ticket->description); showDescription = true"
+                                    >
+                                        {{ \Illuminate\Support\Str::limit($ticket->description, 80) }}
+                                    </button>
+                                </td>
                                 <td class="px-5 py-4 text-gray-700">{{ $ticket->target->label() }}</td>
                                 <td class="px-5 py-4"><span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">{{ $ticket->status->label() }}</span></td>
                                 <td class="whitespace-nowrap px-5 py-4 text-gray-700">{{ $ticket->completed_at ? $ticket->completed_at->timezone('Asia/Jakarta')->format('d M Y, H:i').' WIB' : '-' }}</td>
@@ -69,6 +78,30 @@
                 </table>
             </div>
             <div class="border-t border-gray-200 px-5 py-3">{{ $tickets->links() }}</div>
+        </div>
+
+        <div
+            x-show="showDescription"
+            x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-6"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="description-modal-title"
+            @keydown.escape.window="showDescription = false"
+        >
+            <div class="absolute inset-0 bg-gray-900/50" @click="showDescription = false"></div>
+            <div class="relative w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl" @click.stop>
+                <div class="flex items-start justify-between gap-4">
+                    <h2 id="description-modal-title" class="text-lg font-semibold text-gray-900">Ajuan lengkap</h2>
+                    <button
+                        type="button"
+                        class="rounded-md p-1 text-2xl leading-none text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        aria-label="Tutup ajuan lengkap"
+                        @click="showDescription = false"
+                    >&times;</button>
+                </div>
+                <p class="mt-4 whitespace-pre-wrap break-words text-sm leading-6 text-gray-700" x-text="description"></p>
+            </div>
         </div>
     </div>
 </x-app-layout>
