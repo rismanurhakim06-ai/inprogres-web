@@ -8,7 +8,7 @@ Route::get('/', [TicketController::class, 'index'])->name('home');
 Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
 Route::get('/admin', fn () => redirect()->route('login'))->name('admin.login');
 
-Route::middleware(['auth', 'role:admin,supervisor'])->group(function () {
+Route::middleware(['auth', 'role:owner,admin,supervisor'])->group(function () {
     Route::get('/dashboard', [TicketController::class, 'dashboard'])->name('dashboard');
     Route::patch('/tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
 });

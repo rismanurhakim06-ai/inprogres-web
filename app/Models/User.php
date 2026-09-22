@@ -29,7 +29,7 @@ class User extends Authenticatable
 
     public function canManageTickets(): bool
     {
-        return $this->isAdmin() || $this->isSupervisor();
+        return in_array($this->role, ['owner', 'admin', 'supervisor'], true);
     }
 
     /**
