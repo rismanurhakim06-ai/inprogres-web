@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>inprogres | Pantau pengajuan</title>
+    <title>Ticket | Pantau pengajuan</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="portal-shell">
     <header class="portal-nav">
-        <a class="brand" href="{{ route('home') }}"><span class="brand-mark">i</span> inprogres</a>
+        <a href="#" style="display: flex; align-items: center; gap: 10px; text-decoration: none; margin-right: auto;">
+    <img src="/img/polmanda2.png" alt="Logo" style="width: 60px; height: auto;">
+    <span  style="font-weight: bold; color: #000;">Ticket</span>
+</a>
         <a class="staff-link" href="{{ route('login') }}">Akses staf <span>↗</span></a>
     </header>
     <main class="portal-main">
