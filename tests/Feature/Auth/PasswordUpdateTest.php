@@ -48,4 +48,23 @@ class PasswordUpdateTest extends TestCase
             ->assertSessionHasErrorsIn('updatePassword', 'current_password')
             ->assertRedirect('/profile');
     }
+
+    public function test_every_application_role_can_update_its_own_password(): void
+    {
+        foreach (['owner', 'admin', 'supervisor', 'user'] as $role) {
+            $user = User::factory()->create(['role' => $role]);
+
+            $this->actingAs($user)
+                ->from('/profile')
+                ->put('/password', [
+                    'current_password' => 'password',
+                    'password' => 'new-password-'.$role,
+                    'password_confirmation' => 'new-password-'.$role,
+                ])
+                ->assertSessionHasNoErrors()
+                ->assertRedirect('/profile');
+
+            $this->assertTrue(Hash::check('new-password-'.$role, $user->refresh()->password));
+        }
+    }
 }

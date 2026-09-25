@@ -21,6 +21,17 @@ class ProfileTest extends TestCase
         $response->assertOk();
     }
 
+    public function test_account_page_is_displayed_for_authenticated_users(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+
+        $this->actingAs($user)
+            ->get('/akun')
+            ->assertOk()
+            ->assertSee('Akun')
+            ->assertSee('Informasi Akun');
+    }
+
     public function test_profile_information_can_be_updated(): void
     {
         $user = User::factory()->create();

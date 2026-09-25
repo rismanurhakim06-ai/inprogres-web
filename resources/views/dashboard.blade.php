@@ -14,21 +14,32 @@
             <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
         @endif
 
-        <div class="grid gap-4 sm:grid-cols-4">
-            @foreach ([['total', 'Total tiket'], ['pending', 'Menunggu'], ['in_progress', 'Dikerjakan'], ['completed', 'Selesai']] as [$key, $label])
-                <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                    <p class="text-sm text-gray-500">{{ $label }}</p>
-                    <p class="mt-2 text-3xl font-semibold text-gray-900">{{ $stats[$key] }}</p>
-                </div>
+        <div class="flex flex-nowrap gap-4 overflow-x-auto pb-1">
+            @foreach ([['total', 'Total tiket', 'all'], ['pending', 'Menunggu', 'pending'], ['in_progress', 'Dikerjakan', 'in_progress'], ['completed', 'Selesai', 'completed']] as [$key, $label, $filter])
+            <a href="{{ route('dashboard', $filter === 'all' ? [] : ['status' => $filter]) }}" class="min-w-[170px] flex-1 rounded-xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md {{ $selectedStatus === $filter ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-900' }}">
+                    <p class="text-sm {{ $selectedStatus === $filter ? 'text-gray-300' : 'text-gray-500' }}">{{ $label }}</p>
+                    <p class="mt-2 text-3xl font-semibold">{{ $stats[$key] }}</p>
+                </a>
             @endforeach
+            @if (auth()->user()->role !== 'supervisor')
+                <a href="{{ route('dashboard', ['filter' => 'comments']) }}" class="min-w-[170px] flex-1 rounded-xl border p-5 text-gray-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md {{ $selectedFilter === 'comments' ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white' }}">
+                    <p class="text-sm {{ $selectedFilter === 'comments' ? 'text-gray-300' : 'text-gray-500' }}">Komentar owner</p>
+                    <p class="mt-2 text-3xl font-semibold">{{ $stats['comments'] }}</p>
+                </a>
+            @endif
         </div>
 
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div class="border-b border-gray-200 px-5 py-4"><h3 class="font-semibold text-gray-900">Semua tiket</h3></div>
+            <div class="flex items-center justify-between gap-4 border-b border-gray-200 px-5 py-4">
+                <h3 class="font-semibold text-gray-900">{{ $selectedFilter === 'comments' ? 'Pengajuan yang dikomentari owner' : ($selectedStatus === 'all' ? (auth()->user()->role === 'user' ? 'Pengajuan saya' : 'Semua tiket') : match ($selectedStatus) { 'pending' => 'Pengajuan menunggu', 'in_progress' => 'Pengajuan sedang dikerjakan', 'completed' => 'Pengajuan selesai', default => 'Pengajuan' } ) }}</h3>
+                @if ($selectedStatus !== 'all' || $selectedFilter === 'comments')
+                    <a href="{{ route('dashboard') }}" class="text-sm text-gray-500 underline hover:text-gray-900">Tampilkan semua</a>
+                @endif
+            </div>
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[1160px] text-left text-sm">
                     <thead class="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
-                        <tr><th class="px-5 py-3">Nomor tiket</th><th class="px-5 py-3">Nama pengaju</th><th class="px-5 py-3">No. WhatsApp</th><th class="px-5 py-3">Ajuan</th><th class="px-5 py-3">Target</th><th class="px-5 py-3">Status</th><th class="px-5 py-3">Tanggal selesai</th><th class="px-5 py-3">Aksi</th></tr>
+                        <tr><th class="px-5 py-3">Nomor tiket</th><th class="px-5 py-3">Nama pengaju</th><th class="px-5 py-3">No. WhatsApp</th><th class="px-5 py-3">Ajuan</th><th class="px-5 py-3">Target</th><th class="px-5 py-3">Status</th><th class="px-5 py-3">Tanggal selesai</th>@if (auth()->user()->role !== 'supervisor')<th class="px-5 py-3">Komentar</th>@endif<th class="px-5 py-3">{{ auth()->user()->role === 'user' ? 'Edit' : 'Aksi' }}</th></tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse ($tickets as $ticket)
@@ -55,7 +66,15 @@
                                 <td class="px-5 py-4 text-gray-700">{{ $ticket->target->label() }}</td>
                                 <td class="px-5 py-4"><span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">{{ $ticket->status->label() }}</span></td>
                                 <td class="whitespace-nowrap px-5 py-4 text-gray-700">{{ $ticket->completed_at ? $ticket->completed_at->timezone('Asia/Jakarta')->format('d M Y, H:i').' WIB' : '-' }}</td>
+                                @if (auth()->user()->role !== 'supervisor')
+                                    <td class="px-5 py-4">
+                                        <a href="{{ route('tickets.comments', $ticket) }}" class="whitespace-nowrap rounded-md border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">Chat ({{ $ticket->comments_count ?? $ticket->comments()->count() }})</a>
+                                    </td>
+                                @endif
                                 <td class="px-5 py-4">
+                                    @if (auth()->user()->role === 'user')
+                                        <a href="{{ route('tickets.edit', $ticket) }}" class="rounded-md bg-gray-900 px-3 py-1 text-xs font-medium text-white">Edit pengajuan</a>
+                                    @else
                                     <div class="flex items-center gap-2">
                                         <form method="POST" action="{{ route('tickets.update', $ticket) }}" class="flex gap-2">
                                             @csrf @method('PATCH')
@@ -69,15 +88,16 @@
                                             </form>
                                         @endif
                                     </div>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="8" class="px-5 py-12 text-center text-gray-500">Belum ada pengajuan masuk.</td></tr>
+                            <tr><td colspan="{{ auth()->user()->role === 'supervisor' ? 8 : 9 }}" class="px-5 py-12 text-center text-gray-500">Belum ada pengajuan masuk.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-            <div class="border-t border-gray-200 px-5 py-3">{{ $tickets->links() }}</div>
+            <div class="border-t border-gray-200 px-5 py-3">{{ $tickets->withQueryString()->links() }}</div>
         </div>
 
         <div

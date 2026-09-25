@@ -20,4 +20,15 @@ enum TicketTarget: string
             self::Bk => 'Web BK',
         };
     }
+
+    public function userEmail(): string
+    {
+        return match ($this) {
+            self::Lppm => 'user.lppm@example.com',
+            self::Lpm => 'user.lpm@example.com',
+            self::Ma => 'user.ma@example.com',
+            self::Trpl => 'user.trpl@example.com',
+            self::Bk => 'user.bk@example.com',
+        };
+    }
 }

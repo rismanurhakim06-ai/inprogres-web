@@ -8,9 +8,22 @@ Route::get('/', [TicketController::class, 'index'])->name('home');
 Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
 Route::get('/admin', fn () => redirect()->route('login'))->name('admin.login');
 
-Route::middleware(['auth', 'role:owner,admin,supervisor'])->group(function () {
+Route::middleware(['auth', 'role:owner,admin,supervisor,user'])->group(function () {
     Route::get('/dashboard', [TicketController::class, 'dashboard'])->name('dashboard');
+});
+
+Route::middleware(['auth', 'role:owner,admin,user'])->group(function () {
+    Route::get('/tickets/{ticket}/comments', [TicketController::class, 'comments'])->name('tickets.comments');
+    Route::post('/tickets/{ticket}/comments', [TicketController::class, 'storeComment'])->name('tickets.comments.store');
+});
+
+Route::middleware(['auth', 'role:owner,admin,supervisor'])->group(function () {
     Route::patch('/tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
+});
+
+Route::middleware(['auth', 'role:user'])->group(function () {
+    Route::get('/tickets/{ticket}/edit', [TicketController::class, 'edit'])->name('tickets.edit');
+    Route::patch('/tickets/{ticket}/submission', [TicketController::class, 'updateOwn'])->name('tickets.update-own');
 });
 
 Route::middleware(['auth', 'role:supervisor'])->group(function () {
@@ -18,6 +31,7 @@ Route::middleware(['auth', 'role:supervisor'])->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('/akun', [ProfileController::class, 'edit'])->name('account.edit');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

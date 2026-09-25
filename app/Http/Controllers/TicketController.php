@@ -3,9 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TicketStatus;
+use App\Enums\TicketTarget;
+use App\Http\Requests\StoreTicketCommentRequest;
 use App\Http\Requests\StoreTicketRequest;
+use App\Http\Requests\UpdateOwnTicketRequest;
 use App\Http\Requests\UpdateTicketRequest;
 use App\Models\Ticket;
+use App\Models\TicketComment;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -26,8 +31,15 @@ class TicketController extends Controller
 
     public function store(StoreTicketRequest $request): RedirectResponse
     {
+        $validated = $request->validated();
+        $target = TicketTarget::from($validated['target']);
+        $targetUser = User::where('role', 'user')
+            ->where('target', $target->value)
+            ->firstOrFail();
+
         $ticket = Ticket::create([
-            ...$request->validated(),
+            ...$validated,
+            'user_id' => $targetUser->id,
             'ticket_number' => $this->generateTicketNumber(),
         ]);
 
@@ -36,17 +48,87 @@ class TicketController extends Controller
             ->with('created_ticket', $ticket->ticket_number);
     }
 
-    public function dashboard(): View
+    public function dashboard(Request $request): View
     {
-        $tickets = Ticket::with('assignee')->latest()->paginate(15);
+        $user = request()->user();
+        $baseTicketQuery = $user->role === 'user'
+            ? $user->tickets()
+            : Ticket::query();
+        $ticketQuery = clone $baseTicketQuery;
+        $selectedStatus = $request->string('status')->toString();
+        $selectedFilter = $request->string('filter')->toString();
+
+        if (in_array($selectedStatus, array_column(TicketStatus::cases(), 'value'), true)) {
+            $ticketQuery->where('status', $selectedStatus);
+            $selectedFilter = 'status';
+        } elseif ($selectedFilter === 'comments') {
+            $selectedStatus = 'all';
+            $ticketQuery->whereHas('comments', function ($query): void {
+                $query->whereHas('user', function ($query): void {
+                    $query->whereIn('role', ['owner', 'admin']);
+                });
+            });
+        } else {
+            $selectedStatus = 'all';
+            $selectedFilter = 'all';
+        }
+
+        $tickets = (clone $ticketQuery)->with('assignee')->withCount('comments')->latest()->paginate(15);
+        $commentedTicketsQuery = (clone $baseTicketQuery)->whereHas('comments', function ($query): void {
+            $query->whereHas('user', function ($query): void {
+                $query->whereIn('role', ['owner', 'admin']);
+            });
+        });
         $stats = [
-            'total' => Ticket::count(),
-            'pending' => Ticket::where('status', TicketStatus::Pending)->count(),
-            'in_progress' => Ticket::where('status', TicketStatus::InProgress)->count(),
-            'completed' => Ticket::where('status', TicketStatus::Completed)->count(),
+            'total' => (clone $baseTicketQuery)->count(),
+            'pending' => (clone $baseTicketQuery)->where('status', TicketStatus::Pending)->count(),
+            'in_progress' => (clone $baseTicketQuery)->where('status', TicketStatus::InProgress)->count(),
+            'completed' => (clone $baseTicketQuery)->where('status', TicketStatus::Completed)->count(),
+            'comments' => $commentedTicketsQuery->count(),
         ];
 
-        return view('dashboard', compact('tickets', 'stats'));
+        return view('dashboard', compact('tickets', 'stats', 'selectedStatus', 'selectedFilter'));
+    }
+
+    public function edit(Ticket $ticket): View
+    {
+        return view('tickets.edit', compact('ticket'));
+    }
+
+    public function updateOwn(UpdateOwnTicketRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $validated = $request->validated();
+        $target = TicketTarget::from($validated['target']);
+        $targetUser = User::where('role', 'user')
+            ->where('target', $target->value)
+            ->firstOrFail();
+
+        $ticket->update([
+            ...$validated,
+            'user_id' => $targetUser->id,
+        ]);
+
+        return redirect()->route('dashboard')->with('success', "Pengajuan {$ticket->ticket_number} diperbarui.");
+    }
+
+    public function comments(Ticket $ticket): View
+    {
+        $this->authorizeComments($ticket);
+
+        $ticket->load(['comments.user', 'requester']);
+
+        return view('tickets.comments', compact('ticket'));
+    }
+
+    public function storeComment(StoreTicketCommentRequest $request, Ticket $ticket): RedirectResponse
+    {
+        TicketComment::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $request->user()->id,
+            'body' => $request->validated('body'),
+        ]);
+
+        return redirect()->route('tickets.comments', $ticket)->with('success', 'Pesan berhasil dikirim.');
     }
 
     public function update(UpdateTicketRequest $request, Ticket $ticket): RedirectResponse
@@ -76,5 +158,16 @@ class TicketController extends Controller
         } while (Ticket::where('ticket_number', $number)->exists());
 
         return $number;
+    }
+
+    private function authorizeComments(Ticket $ticket): void
+    {
+        $user = request()->user();
+
+        abort_unless(
+            $user !== null && (($user->role === 'user' && $ticket->user_id === $user->id)
+                || in_array($user->role, ['owner', 'admin'], true)),
+            403,
+        );
     }
 }
