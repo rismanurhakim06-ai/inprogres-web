@@ -11,15 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('tickets', function (Blueprint $table): void {
-            $table->dropForeign(['user_id']);
-            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
-        });
-
-        Schema::table('ticket_comments', function (Blueprint $table): void {
-            $table->dropForeign(['user_id']);
-            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
-        });
+        $this->replaceUserForeignKey('tickets', true);
+        $this->replaceUserForeignKey('ticket_comments', true);
     }
 
     /**
@@ -27,14 +20,29 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('tickets', function (Blueprint $table): void {
-            $table->dropForeign(['user_id']);
-            $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
-        });
+        $this->replaceUserForeignKey('tickets', false);
+        $this->replaceUserForeignKey('ticket_comments', false);
+    }
 
-        Schema::table('ticket_comments', function (Blueprint $table): void {
-            $table->dropForeign(['user_id']);
-            $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
+    private function replaceUserForeignKey(string $tableName, bool $cascadeOnDelete): void
+    {
+        $foreignKey = collect(Schema::getForeignKeys($tableName))
+            ->first(fn (array $foreignKey): bool => $foreignKey['columns'] === ['user_id'] && $foreignKey['foreign_table'] === 'users');
+
+        if ($foreignKey !== null) {
+            Schema::table($tableName, function (Blueprint $table) use ($foreignKey): void {
+                $table->dropForeign($foreignKey['name'] ?? ['user_id']);
+            });
+        }
+
+        Schema::table($tableName, function (Blueprint $table) use ($cascadeOnDelete): void {
+            $foreignKey = $table->foreign('user_id')->references('id')->on('users');
+
+            if ($cascadeOnDelete) {
+                $foreignKey->cascadeOnDelete();
+            } else {
+                $foreignKey->nullOnDelete();
+            }
         });
     }
 };

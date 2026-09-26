@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\Ticket;
 use App\Models\TicketComment;
 use App\Models\User;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class UserManagementTest extends TestCase
@@ -123,6 +125,31 @@ class UserManagementTest extends TestCase
             'assigned_to' => null,
             'updated_by' => null,
         ]);
+    }
+
+    public function test_cascade_migration_adds_missing_user_foreign_keys(): void
+    {
+        $account = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $account->id]);
+        $comment = TicketComment::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $account->id,
+            'body' => 'Komentar yang ikut dihapus.',
+        ]);
+
+        Schema::table('tickets', function (Blueprint $table): void {
+            $table->dropForeign(['user_id']);
+        });
+        Schema::table('ticket_comments', function (Blueprint $table): void {
+            $table->dropForeign(['user_id']);
+        });
+
+        $migration = require database_path('migrations/2026_09_26_130034_cascade_account_data_on_user_deletion.php');
+        $migration->up();
+        $account->delete();
+
+        $this->assertDatabaseMissing('tickets', ['id' => $ticket->id]);
+        $this->assertDatabaseMissing('ticket_comments', ['id' => $comment->id]);
     }
 
     public function test_superadmin_cannot_delete_the_account_used_for_the_current_session(): void
