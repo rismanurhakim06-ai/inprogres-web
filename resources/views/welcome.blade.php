@@ -42,6 +42,9 @@
                     <a class="new-ticket-button" href="{{ route('login') }}">
                         <span>Ingin mengajukan tiket?</span> Masuk untuk membuat tiket <span class="new-ticket-arrow">↗</span>
                     </a>
+                    <a class="new-ticket-button" href="{{ route('register') }}">
+                        <span>Belum punya akun?</span> Daftar sebagai user <span class="new-ticket-arrow">↗</span>
+                    </a>
                 @else
                     <p class="new-ticket-button"><span>Pengajuan tiket baru tersedia untuk akun user.</span></p>
                 @endif

@@ -17,20 +17,31 @@
             <div class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">Nomor tiket baru: <strong>{{ session('created_ticket') }}</strong></div>
         @endif
 
-        <div class="flex flex-nowrap gap-4 overflow-x-auto pb-1">
-            @foreach ([['total', 'Total tiket', 'all'], ['pending', 'Menunggu', 'pending'], ['in_progress', 'Dikerjakan', 'in_progress'], ['completed', 'Selesai', 'completed']] as [$key, $label, $filter])
-            <a href="{{ route('dashboard', $filter === 'all' ? [] : ['status' => $filter]) }}" class="min-w-[170px] flex-1 rounded-xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md {{ $selectedStatus === $filter ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-900' }}">
-                    <p class="text-sm {{ $selectedStatus === $filter ? 'text-gray-300' : 'text-gray-500' }}">{{ $label }}</p>
-                    <p class="mt-2 text-3xl font-semibold">{{ $stats[$key] }}</p>
-                </a>
-            @endforeach
-            @if ($showCommentTools)
-                <a href="{{ route('dashboard', ['filter' => 'comments']) }}" class="min-w-[170px] flex-1 rounded-xl border p-5 text-gray-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md {{ $selectedFilter === 'comments' ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white' }}">
-                    <p class="text-sm {{ $selectedFilter === 'comments' ? 'text-gray-300' : 'text-gray-500' }}">Komentar owner</p>
-                    <p class="mt-2 text-3xl font-semibold">{{ $stats['comments'] }}</p>
-                </a>
-            @endif
-        </div>
+        @if (($featureVisibility['summary_total'] ?? false) || ($featureVisibility['summary_pending'] ?? false) || ($featureVisibility['summary_in_progress'] ?? false) || ($featureVisibility['summary_completed'] ?? false) || ($featureVisibility['summary_comments'] ?? false))
+            <div class="flex flex-nowrap gap-4 overflow-x-auto pb-1">
+                @foreach ([['summary_total', 'total', 'Total tiket', 'all'], ['summary_pending', 'pending', 'Menunggu', 'pending'], ['summary_in_progress', 'in_progress', 'Dikerjakan', 'in_progress'], ['summary_completed', 'completed', 'Selesai', 'completed']] as [$feature, $key, $label, $filter])
+                    @if ($featureVisibility[$feature] ?? false)
+                        <a href="{{ route('dashboard', $filter === 'all' ? [] : ['status' => $filter]) }}" class="min-w-[170px] flex-1 rounded-xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md {{ $selectedStatus === $filter ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-900' }}">
+                            <p class="text-sm {{ $selectedStatus === $filter ? 'text-gray-300' : 'text-gray-500' }}">{{ $label }}</p>
+                            <p class="mt-2 text-3xl font-semibold">{{ $stats[$key] }}</p>
+                        </a>
+                    @endif
+                @endforeach
+                @if ($featureVisibility['summary_comments'] ?? false)
+                    @if ($showCommentTools)
+                        <a href="{{ route('dashboard', ['filter' => 'comments']) }}" class="min-w-[170px] flex-1 rounded-xl border p-5 text-gray-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md {{ $selectedFilter === 'comments' ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white' }}">
+                            <p class="text-sm {{ $selectedFilter === 'comments' ? 'text-gray-300' : 'text-gray-500' }}">Komentar owner</p>
+                            <p class="mt-2 text-3xl font-semibold">{{ $stats['comments'] }}</p>
+                        </a>
+                    @else
+                        <div class="min-w-[170px] flex-1 rounded-xl border border-gray-200 bg-white p-5 text-gray-900 shadow-sm">
+                            <p class="text-sm text-gray-500">Komentar owner</p>
+                            <p class="mt-2 text-3xl font-semibold">{{ $stats['comments'] }}</p>
+                        </div>
+                    @endif
+                @endif
+            </div>
+        @endif
 
         @if (auth()->user()->role === 'user')
             <div class="flex items-center justify-between gap-4">

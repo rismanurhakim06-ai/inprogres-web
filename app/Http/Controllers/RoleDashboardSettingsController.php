@@ -25,10 +25,14 @@ class RoleDashboardSettingsController extends Controller
             $settingsByRole[$role] = $setting;
         }
 
+        $creatableRoles = RoleDashboardSetting::creatableRolesFor(auth()->user()->role);
+
         return view('settings.roles', [
             'settingsByRole' => $settingsByRole,
             'roleLabels' => RoleDashboardSetting::ROLE_LABELS,
-            'features' => RoleDashboardSetting::FEATURES,
+            'summaryFeatures' => RoleDashboardSetting::SUMMARY_FEATURES,
+            'tableFeatures' => RoleDashboardSetting::TABLE_FEATURES,
+            'creatableRoles' => $creatableRoles,
         ]);
     }
 

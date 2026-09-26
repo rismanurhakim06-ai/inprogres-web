@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountApprovalController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleDashboardSettingsController;
 use App\Http\Controllers\StaffUserController;
@@ -18,6 +19,8 @@ Route::middleware(['auth', 'role:owner,admin,supervisor,user'])->group(function 
 });
 
 Route::middleware(['auth', 'role:superadmin,admin'])->group(function () {
+    Route::get('/pengaturan/persetujuan-akun', [AccountApprovalController::class, 'index'])->name('account-approvals.index');
+    Route::post('/pengaturan/persetujuan-akun/{user}', [AccountApprovalController::class, 'store'])->name('account-approvals.store');
     Route::get('/pengaturan/tampilan-role', [RoleDashboardSettingsController::class, 'index'])->name('settings.roles.edit');
     Route::post('/pengaturan/tampilan-role/akun', [StaffUserController::class, 'store'])->name('settings.roles.users.store');
 });

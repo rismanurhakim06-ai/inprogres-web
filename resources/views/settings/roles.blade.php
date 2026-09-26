@@ -19,8 +19,8 @@
             <form method="POST" action="{{ route('settings.roles.users.store') }}" class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
                 @csrf
                 <div class="border-b border-gray-200 px-5 py-4">
-                    <h3 class="font-semibold text-gray-900">Buat akun dengan role</h3>
-                    <p class="mt-1 text-sm text-gray-500">Tambahkan akun User, Admin, atau Supervisor.</p>
+                    <h3 class="font-semibold text-gray-900">{{ auth()->user()->role === 'admin' ? 'Buat akun User' : 'Buat akun dengan role' }}</h3>
+                    <p class="mt-1 text-sm text-gray-500">{{ auth()->user()->role === 'admin' ? 'Admin hanya dapat membuat akun User.' : 'Tambahkan akun User, Admin, atau Supervisor.' }}</p>
                 </div>
                 <div class="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
                     <div>
@@ -34,7 +34,7 @@
                     <div>
                         <label for="staff-role" class="mb-1 block text-sm font-medium text-gray-700">Role</label>
                         <select id="staff-role" name="role" required class="w-full rounded-md border-gray-300 text-sm focus:border-gray-700 focus:ring-gray-700">
-                            @foreach (\App\Models\RoleDashboardSetting::CREATABLE_ROLES as $role => $label)
+                            @foreach ($creatableRoles as $role => $label)
                                 <option value="{{ $role }}" @selected(old('role', 'user') === $role)>{{ $label }}</option>
                             @endforeach
                         </select>
@@ -61,8 +61,8 @@
 
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
                 <div>
-                    <h3 class="font-semibold text-gray-900">Kolom tabel dashboard</h3>
-                    <p class="mt-1 text-sm text-gray-500">Pilih kolom yang ditampilkan pada tabel setiap role.</p>
+                    <h3 class="font-semibold text-gray-900">Pengaturan tampilan dashboard</h3>
+                    <p class="mt-1 text-sm text-gray-500">Pilih kartu ringkasan dan kolom tabel yang ditampilkan untuk setiap role.</p>
                 </div>
                 <button type="submit" class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">Simpan pengaturan</button>
             </div>
@@ -81,27 +81,28 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                        @foreach ($features as $feature => $label)
+                        @foreach (['Kartu ringkasan' => $summaryFeatures, 'Kolom tabel tiket' => $tableFeatures] as $groupLabel => $groupFeatures)
                             <tr>
-                                <th scope="row" class="px-5 py-4 font-medium text-gray-900">{{ $label }}</th>
-                                @foreach ($roleLabels as $role => $roleLabel)
-                                    <td class="px-5 py-4 text-center">
-                                        <input
-                                            type="hidden"
-                                            name="settings[{{ $role }}][{{ $feature }}]"
-                                            value="0"
-                                        >
-                                        <input
-                                            type="checkbox"
-                                            name="settings[{{ $role }}][{{ $feature }}]"
-                                            value="1"
-                                            aria-label="{{ $roleLabel }}: {{ $label }}"
-                                            @checked($settingsByRole[$role]->features[$feature] ?? false)
-                                            class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-700"
-                                        >
-                                    </td>
-                                @endforeach
+                                <th colspan="{{ count($roleLabels) + 1 }}" class="bg-gray-50 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500">{{ $groupLabel }}</th>
                             </tr>
+                            @foreach ($groupFeatures as $feature => $label)
+                                <tr>
+                                    <th scope="row" class="px-5 py-4 font-medium text-gray-900">{{ $label }}</th>
+                                    @foreach ($roleLabels as $role => $roleLabel)
+                                        <td class="px-5 py-4 text-center">
+                                            <input type="hidden" name="settings[{{ $role }}][{{ $feature }}]" value="0">
+                                            <input
+                                                type="checkbox"
+                                                name="settings[{{ $role }}][{{ $feature }}]"
+                                                value="1"
+                                                aria-label="{{ $roleLabel }}: {{ $label }}"
+                                                @checked($settingsByRole[$role]->features[$feature] ?? false)
+                                                class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-700"
+                                            >
+                                        </td>
+                                    @endforeach
+                                </tr>
+                            @endforeach
                         @endforeach
                     </tbody>
                 </table>

@@ -13,19 +13,35 @@ class RegistrationTest extends TestCase
     {
         $response = $this->get('/register');
 
-        $response->assertStatus(200);
+        $response->assertOk()->assertSee('Daftar');
     }
 
-    public function test_new_users_can_register(): void
+    public function test_landing_page_links_to_user_registration(): void
+    {
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Daftar sebagai user')
+            ->assertSee(route('register'));
+    }
+
+    public function test_new_users_register_as_pending_and_are_not_logged_in(): void
     {
         $response = $this->post('/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
+            'role' => 'admin',
+            'is_approved' => true,
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $this->assertGuest();
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHas('status', 'Pendaftaran berhasil. Akun Anda sedang menunggu persetujuan admin atau superadmin.');
+        $this->assertDatabaseHas('users', [
+            'email' => 'test@example.com',
+            'role' => 'user',
+            'is_approved' => false,
+        ]);
     }
 }

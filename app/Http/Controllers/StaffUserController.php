@@ -12,10 +12,12 @@ class StaffUserController extends Controller
 {
     public function store(Request $request): RedirectResponse
     {
+        $creatableRoles = RoleDashboardSetting::creatableRolesFor($request->user()->role);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'role' => ['required', 'string', 'in:'.implode(',', array_keys(RoleDashboardSetting::CREATABLE_ROLES))],
+            'role' => ['required', 'string', 'in:'.implode(',', array_keys($creatableRoles))],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 

@@ -42,6 +42,19 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_pending_users_cannot_authenticate_and_see_the_approval_message(): void
+    {
+        $user = User::factory()->create(['is_approved' => false]);
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])
+            ->assertSessionHasErrors(['email' => 'Akun Anda sedang menunggu persetujuan admin atau superadmin.']);
+
+        $this->assertGuest();
+    }
+
     public function test_users_can_logout(): void
     {
         $user = User::factory()->create();

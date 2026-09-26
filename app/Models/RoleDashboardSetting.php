@@ -14,7 +14,15 @@ class RoleDashboardSetting extends Model
         'owner' => 'Owner (kompatibilitas)',
     ];
 
-    public const FEATURES = [
+    public const SUMMARY_FEATURES = [
+        'summary_total' => 'Total tiket',
+        'summary_pending' => 'Menunggu',
+        'summary_in_progress' => 'Dikerjakan',
+        'summary_completed' => 'Selesai',
+        'summary_comments' => 'Komentar owner',
+    ];
+
+    public const TABLE_FEATURES = [
         'ticket_number' => 'Nomor tiket',
         'created_at' => 'Tanggal ajuan',
         'requester_name' => 'Nama pengaju',
@@ -27,6 +35,8 @@ class RoleDashboardSetting extends Model
         'edit_submission' => 'EDIT',
         'actions' => 'Aksi',
     ];
+
+    public const FEATURES = [...self::SUMMARY_FEATURES, ...self::TABLE_FEATURES];
 
     public const ROLE_FEATURES = [
         'admin' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'completed_at', 'actions'],
@@ -57,14 +67,30 @@ class RoleDashboardSetting extends Model
     {
         $features = array_fill_keys(array_keys(self::FEATURES), false);
 
+        $defaultSummaryFeatures = array_keys(self::SUMMARY_FEATURES);
+
+        if (! in_array('comment_tools', self::ROLE_FEATURES[$role] ?? [], true)) {
+            $defaultSummaryFeatures = array_diff($defaultSummaryFeatures, ['summary_comments']);
+        }
+
         $defaultFeatures = $role === 'superadmin'
             ? array_keys(self::FEATURES)
-            : (self::ROLE_FEATURES[$role] ?? []);
+            : array_merge($defaultSummaryFeatures, self::ROLE_FEATURES[$role] ?? []);
 
         foreach ($defaultFeatures as $feature) {
             $features[$feature] = true;
         }
 
         return $features;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function creatableRolesFor(string $creatorRole): array
+    {
+        return $creatorRole === 'admin'
+            ? ['user' => self::CREATABLE_ROLES['user']]
+            : self::CREATABLE_ROLES;
     }
 }

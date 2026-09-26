@@ -9,6 +9,12 @@
             <div class="hidden items-center gap-2 md:flex">
                 <a href="{{ route('dashboard') }}" class="rounded-md px-3 py-2 text-sm font-medium {{ request()->routeIs('dashboard') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100' }}">Dashboard</a>
                 @if (Auth::user()->isAdmin())
+                    <a href="{{ route('account-approvals.index') }}" class="whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium {{ request()->routeIs('account-approvals.*') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100' }}">
+                        Persetujuan akun
+                        @if ($pendingAccountApprovalsCount > 0)
+                            <span class="ms-1 rounded-full bg-amber-500 px-2 py-0.5 text-xs text-white">{{ $pendingAccountApprovalsCount }}</span>
+                        @endif
+                    </a>
                     <a href="{{ route('settings.roles.edit') }}" class="whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium {{ request()->routeIs('settings.roles.*') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100' }}">{{ Auth::user()->isSuperAdmin() ? 'Pengaturan tampilan role' : 'Kelola akun' }}</a>
                 @endif
                 @if (Auth::user()->isSuperAdmin())
@@ -50,6 +56,12 @@
         <div class="space-y-1">
             <a href="{{ route('dashboard') }}" @click="open = false" class="block rounded-md px-3 py-2 text-sm font-medium {{ request()->routeIs('dashboard') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100' }}">Dashboard</a>
             @if (Auth::user()->isAdmin())
+                <a href="{{ route('account-approvals.index') }}" @click="open = false" class="flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium {{ request()->routeIs('account-approvals.*') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100' }}">
+                    Persetujuan akun
+                    @if ($pendingAccountApprovalsCount > 0)
+                        <span class="rounded-full bg-amber-500 px-2 py-0.5 text-xs text-white">{{ $pendingAccountApprovalsCount }}</span>
+                    @endif
+                </a>
                 <a href="{{ route('settings.roles.edit') }}" @click="open = false" class="block rounded-md px-3 py-2 text-sm font-medium {{ request()->routeIs('settings.roles.*') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100' }}">{{ Auth::user()->isSuperAdmin() ? 'Pengaturan tampilan role' : 'Kelola akun' }}</a>
             @endif
             @if (Auth::user()->isSuperAdmin())
