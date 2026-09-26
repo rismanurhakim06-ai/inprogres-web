@@ -8,6 +8,7 @@ use App\Http\Requests\StoreTicketCommentRequest;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Requests\UpdateOwnTicketRequest;
 use App\Http\Requests\UpdateTicketRequest;
+use App\Models\RoleDashboardSetting;
 use App\Models\Ticket;
 use App\Models\TicketComment;
 use App\Models\User;
@@ -31,19 +32,12 @@ class TicketController extends Controller
 
     public function store(StoreTicketRequest $request): RedirectResponse
     {
-        $validated = $request->validated();
-        $target = TicketTarget::from($validated['target']);
-        $targetUser = User::where('role', 'user')
-            ->where('target', $target->value)
-            ->firstOrFail();
-
-        $ticket = Ticket::create([
-            ...$validated,
-            'user_id' => $targetUser->id,
+        $ticket = $request->user()->tickets()->create([
+            ...$request->validated(),
             'ticket_number' => $this->generateTicketNumber(),
         ]);
 
-        return redirect()->route('home')
+        return redirect()->route('dashboard')
             ->with('success', 'Pengajuan berhasil dikirim.')
             ->with('created_ticket', $ticket->ticket_number);
     }
@@ -51,6 +45,31 @@ class TicketController extends Controller
     public function dashboard(Request $request): View
     {
         $user = request()->user();
+        $roleDashboardSetting = RoleDashboardSetting::query()->firstOrCreate(
+            ['role' => $user->role],
+            ['features' => RoleDashboardSetting::defaultFeaturesFor($user->role)],
+        );
+        $featureVisibility = array_merge(
+            RoleDashboardSetting::defaultFeaturesFor($user->role),
+            $roleDashboardSetting->features ?? [],
+        );
+        $showCommentTools = ($featureVisibility['comment_tools'] ?? false) && $user->role !== 'supervisor';
+        $showEditSubmission = ($featureVisibility['edit_submission'] ?? false) && $user->role === 'user';
+        $showActions = ($featureVisibility['actions'] ?? false) && $user->canManageTickets();
+        $visibleColumns = [
+            'ticket_number' => $featureVisibility['ticket_number'],
+            'requester_name' => $featureVisibility['requester_name'],
+            'description' => $featureVisibility['description'],
+            'whatsapp_number' => $featureVisibility['whatsapp_number'],
+            'target' => $featureVisibility['target'],
+            'status' => $featureVisibility['status'],
+            'completed_at' => $featureVisibility['completed_at'],
+            'comment_tools' => $showCommentTools,
+            'edit_submission' => $showEditSubmission,
+            'actions' => $showActions,
+            'created_at' => $featureVisibility['created_at'],
+        ];
+        $columnCount = count(array_filter($visibleColumns));
         $baseTicketQuery = $user->role === 'user'
             ? $user->tickets()
             : Ticket::query();
@@ -61,11 +80,11 @@ class TicketController extends Controller
         if (in_array($selectedStatus, array_column(TicketStatus::cases(), 'value'), true)) {
             $ticketQuery->where('status', $selectedStatus);
             $selectedFilter = 'status';
-        } elseif ($selectedFilter === 'comments') {
+        } elseif ($selectedFilter === 'comments' && $showCommentTools) {
             $selectedStatus = 'all';
             $ticketQuery->whereHas('comments', function ($query): void {
                 $query->whereHas('user', function ($query): void {
-                    $query->whereIn('role', ['owner', 'admin']);
+                    $query->whereIn('role', ['owner', 'admin', 'superadmin']);
                 });
             });
         } else {
@@ -76,7 +95,7 @@ class TicketController extends Controller
         $tickets = (clone $ticketQuery)->with('assignee')->withCount('comments')->latest()->paginate(15);
         $commentedTicketsQuery = (clone $baseTicketQuery)->whereHas('comments', function ($query): void {
             $query->whereHas('user', function ($query): void {
-                $query->whereIn('role', ['owner', 'admin']);
+                $query->whereIn('role', ['owner', 'admin', 'superadmin']);
             });
         });
         $stats = [
@@ -87,7 +106,7 @@ class TicketController extends Controller
             'comments' => $commentedTicketsQuery->count(),
         ];
 
-        return view('dashboard', compact('tickets', 'stats', 'selectedStatus', 'selectedFilter'));
+        return view('dashboard', compact('tickets', 'stats', 'selectedStatus', 'selectedFilter', 'featureVisibility', 'showCommentTools', 'showEditSubmission', 'showActions', 'visibleColumns', 'columnCount'));
     }
 
     public function edit(Ticket $ticket): View
@@ -166,7 +185,7 @@ class TicketController extends Controller
 
         abort_unless(
             $user !== null && (($user->role === 'user' && $ticket->user_id === $user->id)
-                || in_array($user->role, ['owner', 'admin'], true)),
+                || in_array($user->role, ['owner', 'admin', 'superadmin'], true)),
             403,
         );
     }

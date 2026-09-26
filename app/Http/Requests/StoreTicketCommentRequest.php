@@ -18,7 +18,7 @@ class StoreTicketCommentRequest extends FormRequest
 
         return $ticket instanceof Ticket
             && $user !== null
-            && ($user->canManageTickets() && in_array($user->role, ['owner', 'admin'], true)
+            && ($user->canManageTickets() && in_array($user->role, ['owner', 'admin', 'superadmin'], true)
                 || $ticket->user_id === $user->id);
     }
 

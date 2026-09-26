@@ -20,7 +20,12 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return in_array($this->role, ['admin', 'superadmin'], true);
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'superadmin';
     }
 
     public function isSupervisor(): bool
@@ -30,7 +35,7 @@ class User extends Authenticatable
 
     public function canManageTickets(): bool
     {
-        return in_array($this->role, ['owner', 'admin', 'supervisor'], true);
+        return in_array($this->role, ['owner', 'admin', 'supervisor', 'superadmin'], true);
     }
 
     public function tickets(): HasMany

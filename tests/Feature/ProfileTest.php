@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Ticket;
+use App\Models\TicketComment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -75,6 +77,19 @@ class ProfileTest extends TestCase
     public function test_user_can_delete_their_account(): void
     {
         $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+        $otherTicket = Ticket::factory()->create(['user_id' => $otherUser->id]);
+        $comment = TicketComment::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'body' => 'Komentar akun yang dihapus.',
+        ]);
+        $authoredComment = TicketComment::create([
+            'ticket_id' => $otherTicket->id,
+            'user_id' => $user->id,
+            'body' => 'Komentar pada tiket pengguna lain.',
+        ]);
 
         $response = $this
             ->actingAs($user)
@@ -88,6 +103,10 @@ class ProfileTest extends TestCase
 
         $this->assertGuest();
         $this->assertNull($user->fresh());
+        $this->assertDatabaseMissing('tickets', ['id' => $ticket->id]);
+        $this->assertDatabaseMissing('ticket_comments', ['id' => $comment->id]);
+        $this->assertDatabaseHas('tickets', ['id' => $otherTicket->id, 'user_id' => $otherUser->id]);
+        $this->assertDatabaseMissing('ticket_comments', ['id' => $authoredComment->id]);
     }
 
     public function test_correct_password_must_be_provided_to_delete_account(): void

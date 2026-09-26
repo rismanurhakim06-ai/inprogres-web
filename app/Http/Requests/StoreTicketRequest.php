@@ -15,7 +15,7 @@ class StoreTicketRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->role === 'user';
     }
 
     /**

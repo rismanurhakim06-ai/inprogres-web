@@ -29,7 +29,7 @@
                     <div class="flex {{ $isOwnMessage ? 'justify-end' : 'justify-start' }}">
                         <div class="max-w-[85%] rounded-2xl px-4 py-3 {{ $isOwnMessage ? 'rounded-br-sm bg-gray-900 text-white' : 'rounded-bl-sm bg-gray-100 text-gray-900' }}">
                             <div class="flex items-center justify-between gap-4 text-xs {{ $isOwnMessage ? 'text-gray-300' : 'text-gray-500' }}">
-                                <span class="font-semibold">{{ $comment->user->name }}</span>
+                                <span class="font-semibold">{{ $comment->user?->name ?? 'Akun dihapus' }}</span>
                                 <time datetime="{{ $comment->created_at->toIso8601String() }}">{{ $comment->created_at->timezone('Asia/Jakarta')->format('d M Y, H:i') }}</time>
                             </div>
                             <p class="mt-2 whitespace-pre-wrap break-words text-sm leading-6">{{ $comment->body }}</p>

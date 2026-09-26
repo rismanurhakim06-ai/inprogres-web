@@ -21,18 +21,6 @@
             <p class="hero-copy">Kirim pengajuan ke tim yang tepat atau pantau statusnya dengan satu nomor tiket.</p>
         </section>
         @if (session('success'))<div class="notice success">{{ session('success') }}</div>@endif
-        @if (session('created_ticket'))
-            <section class="ticket-confirmation" aria-live="polite">
-                <div>
-                    <p class="eyebrow">NOMOR TIKET ANDA</p>
-                    <strong id="created-ticket-number">{{ session('created_ticket') }}</strong>
-                    <p class="confirmation-copy">Simpan nomor ini untuk memantau pengajuan Anda kapan saja.</p>
-                </div>
-                <button type="button" class="copy-ticket-button" data-copy-ticket="{{ session('created_ticket') }}" aria-label="Salin nomor tiket">
-                    <span class="copy-icon">□</span> <span data-copy-label>Salin tiket</span>
-                </button>
-            </section>
-        @endif
         <section class="portal-grid">
             <div class="track-panel panel-card">
                 <div class="panel-kicker"><span class="step-dot">01</span> LACAK PENGAJUAN</div>
@@ -46,69 +34,22 @@
                     @if ($ticket)<div class="ticket-result"><div class="result-head"><span>{{ $ticket->ticket_number }}</span><span class="status-pill status-{{ $ticket->status->value }}">{{ $ticket->status->label() }}</span></div><strong>{{ $ticket->requester_name }}</strong><p>{{ $ticket->description }}</p><small>Diajukan {{ $ticket->created_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i') }} WIB · {{ $ticket->target->label() }}</small><small class="completion-date">Tanggal selesai: {{ $ticket->completed_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i') ?? 'Belum selesai' }} WIB</small></div>
                     @else<div class="notice error">Nomor tiket tidak ditemukan. Periksa kembali penulisannya.</div>@endif
                 @endif
-                <button type="button" class="new-ticket-button" data-ticket-toggle aria-expanded="{{ $errors->any() ? 'true' : 'false' }}" aria-controls="new-ticket-panel">
-                    <span>Belum punya tiket?</span> Buat tiket baru <span class="new-ticket-arrow">↘</span>
-                </button>
-            </div>
-            <div id="new-ticket-panel" class="create-panel panel-card" data-ticket-panel @if (!$errors->any()) hidden @endif>
-                <button type="button" class="panel-close" data-ticket-close aria-label="Tutup formulir tiket baru">×</button>
-                <div class="panel-kicker"><span class="step-dot">02</span> BUAT PENGAJUAN</div>
-                <h2>Butuh bantuan?</h2><p class="muted">Ceritakan kebutuhanmu. Kami akan memberi nomor tiket untuk dipantau.</p>
-                <form action="{{ route('tickets.store') }}" method="POST" class="ticket-form">
-                    @csrf
-                    <div class="form-row"><div><label for="requester_name">Nama pengaju</label><input id="requester_name" name="requester_name" value="{{ old('requester_name') }}" required></div><div><label for="whatsapp_number">No. WhatsApp</label><input id="whatsapp_number" name="whatsapp_number" value="{{ old('whatsapp_number') }}" placeholder="08xxxxxxxxxx" required></div></div>
-                    <label for="description">Isi ajuan</label><textarea id="description" name="description" rows="4" placeholder="Jelaskan masalah atau kebutuhanmu..." required>{{ old('description') }}</textarea>
-                    <div class="form-row"><div><label for="priority">Urgensi</label><select id="priority" name="priority" required><option value="">Pilih urgensi</option><option value="relaxed">Santai</option><option value="urgent">Mendesak</option><option value="critical">Urgent</option></select></div><div><label for="target">Target sistem</label><select id="target" name="target" required><option value="">Pilih sistem</option><option value="lppm">Web LPPM</option><option value="lpm">Web LPM</option><option value="ma">Web MA</option><option value="trpl">Web TRPL</option><option value="bk">Web BK</option></select></div></div>
-                    @if ($errors->any())<div class="notice error">{{ $errors->first() }}</div>@endif
-                    <button class="primary-button" type="submit">Kirim pengajuan <span>↗</span></button>
-                </form>
+                @if (auth()->user()?->role === 'user')
+                    <a class="new-ticket-button" href="{{ route('dashboard') }}">
+                        <span>Sudah masuk?</span> Buat tiket baru di dashboard <span class="new-ticket-arrow">↗</span>
+                    </a>
+                @elseif (auth()->guest())
+                    <a class="new-ticket-button" href="{{ route('login') }}">
+                        <span>Ingin mengajukan tiket?</span> Masuk untuk membuat tiket <span class="new-ticket-arrow">↗</span>
+                    </a>
+                @else
+                    <p class="new-ticket-button"><span>Pengajuan tiket baru tersedia untuk akun user.</span></p>
+                @endif
             </div>
         </section>
     </main>
     <footer class="portal-footer"><span>inprogres / layanan pengajuan</span><span>Respons transparan, langkah terarah.</span></footer>
     <script>
-        async function copyText(text) {
-            if (navigator.clipboard && window.isSecureContext) {
-                await navigator.clipboard.writeText(text);
-
-                return true;
-            }
-
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            textArea.setAttribute('readonly', '');
-            textArea.style.position = 'fixed';
-            textArea.style.opacity = '0';
-            document.body.appendChild(textArea);
-            textArea.select();
-
-            let copied = false;
-
-            try {
-                copied = document.execCommand('copy');
-            } finally {
-                textArea.remove();
-            }
-
-            return copied;
-        }
-
-        document.querySelectorAll('[data-copy-ticket]').forEach((button) => {
-            button.addEventListener('click', async () => {
-                const label = button.querySelector('[data-copy-label]');
-
-                try {
-                    const copied = await copyText(button.dataset.copyTicket);
-
-                    label.textContent = copied ? 'Tersalin' : 'Gagal menyalin';
-                } catch {
-                    label.textContent = 'Gagal menyalin';
-                }
-
-                window.setTimeout(() => { label.textContent = 'Salin tiket'; }, 1800);
-            });
-        });
-
         document.querySelectorAll('.ticket-result, .track-panel > .notice.error').forEach((response) => {
             window.setTimeout(() => {
                 response.classList.add('response-dismissed');
@@ -116,44 +57,6 @@
             }, 5000);
         });
 
-        document.querySelectorAll('.ticket-confirmation').forEach((response) => {
-            window.setTimeout(() => {
-                response.classList.add('response-dismissed');
-                window.setTimeout(() => response.remove(), 220);
-            }, 10000);
-        });
-
-        const ticketToggle = document.querySelector('[data-ticket-toggle]');
-        const ticketPanel = document.querySelector('[data-ticket-panel]');
-        const ticketClose = document.querySelector('[data-ticket-close]');
-
-        const closeTicketPanel = () => {
-            ticketPanel.setAttribute('hidden', '');
-            ticketToggle?.setAttribute('aria-expanded', 'false');
-        };
-
-        const toggleTicketPanel = () => {
-            const isHidden = ticketPanel.hasAttribute('hidden');
-
-            ticketPanel.toggleAttribute('hidden', !isHidden);
-            ticketToggle.setAttribute('aria-expanded', String(isHidden));
-
-            if (isHidden) {
-                ticketPanel.querySelector('input, textarea, select')?.focus();
-            }
-        };
-
-        ticketToggle?.addEventListener('click', toggleTicketPanel);
-        ticketClose?.addEventListener('click', () => {
-            closeTicketPanel();
-            ticketToggle?.focus();
-        });
-
-        document.addEventListener('click', (event) => {
-            if (!ticketPanel.hasAttribute('hidden') && !ticketPanel.contains(event.target) && !ticketToggle?.contains(event.target)) {
-                closeTicketPanel();
-            }
-        });
     </script>
 </body>
 </html>

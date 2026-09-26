@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
+use App\Models\RoleDashboardSetting;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -13,15 +14,31 @@ class TicketWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_public_user_can_submit_and_track_a_ticket(): void
+    public function test_guest_must_sign_in_before_submitting_a_ticket(): void
     {
-        User::factory()->create([
+        $this->post(route('tickets.store'), [
+            'requester_name' => 'Alya Pratama',
+            'whatsapp_number' => '081234567890',
+            'description' => 'Mohon bantuan memperbarui halaman layanan.',
+            'priority' => 'urgent',
+            'target' => 'lppm',
+        ])->assertRedirect(route('login'));
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Masuk untuk membuat tiket')
+            ->assertDontSee('new-ticket-panel', false);
+    }
+
+    public function test_authenticated_user_can_submit_and_track_a_ticket(): void
+    {
+        $user = User::factory()->create([
             'email' => 'user.lppm@example.com',
             'role' => 'user',
             'target' => 'lppm',
         ]);
 
-        $response = $this->post(route('tickets.store'), [
+        $response = $this->actingAs($user)->post(route('tickets.store'), [
             'requester_name' => 'Alya Pratama',
             'whatsapp_number' => '081234567890',
             'description' => 'Mohon bantuan memperbarui halaman layanan.',
@@ -29,45 +46,73 @@ class TicketWorkflowTest extends TestCase
             'target' => 'lppm',
         ]);
 
-        $ticket = Ticket::first();
+        $ticket = Ticket::firstOrFail();
 
-        $response->assertRedirect(route('home'))
+        $response->assertRedirect(route('dashboard'))
             ->assertSessionHas('created_ticket', $ticket->ticket_number);
-        $this->get(route('home'))
+        $this->get(route('dashboard'))
             ->assertOk()
-            ->assertSee($ticket->ticket_number)
-            ->assertDontSee('Belum disetujui');
+            ->assertSee('Buat Ticket Baru')
+            ->assertSee('action="'.route('tickets.store').'"', false)
+            ->assertSee('name="description"', false)
+            ->assertSee('role="dialog"', false)
+            ->assertSee('status-pending', false)
+            ->assertSee($ticket->ticket_number);
         $this->get(route('home', ['ticket' => $ticket->ticket_number]))
             ->assertOk()
             ->assertSee($ticket->ticket_number)
             ->assertSee('Belum disetujui');
 
         $this->assertSame(
-            'user.lppm@example.com',
-            $ticket->requester->email,
+            $user->id,
+            $ticket->user_id,
         );
     }
 
-    public function test_ticket_is_saved_to_the_user_matching_the_selected_target(): void
+    public function test_ticket_is_saved_to_the_authenticated_user_not_the_selected_target_account(): void
     {
+        $user = User::factory()->create([
+            'role' => 'user',
+            'target' => 'lppm',
+        ]);
         $targetUser = User::factory()->create([
             'email' => 'user.ma@example.com',
             'role' => 'user',
             'target' => 'ma',
         ]);
 
-        $this->post(route('tickets.store'), [
+        $this->actingAs($user)->post(route('tickets.store'), [
             'requester_name' => 'Alya Pratama',
             'whatsapp_number' => '081234567890',
             'description' => 'Mohon bantuan memperbarui halaman layanan.',
             'priority' => 'urgent',
             'target' => 'ma',
-        ])->assertRedirect(route('home'));
+        ])->assertRedirect(route('dashboard'));
 
         $this->assertDatabaseHas('tickets', [
             'target' => 'ma',
-            'user_id' => $targetUser->id,
+            'user_id' => $user->id,
         ]);
+        $this->assertDatabaseMissing('tickets', ['user_id' => $targetUser->id]);
+    }
+
+    public function test_staff_cannot_create_a_ticket_from_the_user_submission_form(): void
+    {
+        foreach (['admin', 'superadmin'] as $role) {
+            $staff = User::factory()->create(['role' => $role]);
+
+            $this->actingAs($staff)
+                ->post(route('tickets.store'), [
+                    'requester_name' => 'Alya Pratama',
+                    'whatsapp_number' => '081234567890',
+                    'description' => 'Mohon bantuan memperbarui halaman layanan.',
+                    'priority' => 'urgent',
+                    'target' => 'lppm',
+                ])
+                ->assertForbidden();
+        }
+
+        $this->assertDatabaseCount('tickets', 0);
     }
 
     public function test_only_admin_or_supervisor_can_update_tickets(): void
@@ -133,7 +178,7 @@ class TicketWorkflowTest extends TestCase
             ->assertOk()
             ->assertSee($ownedTicket->ticket_number)
             ->assertDontSee($otherTicket->ticket_number)
-            ->assertSee('Edit pengajuan')
+            ->assertSee('EDIT')
             ->assertDontSee('Simpan');
 
         $this->actingAs($user)
@@ -212,6 +257,16 @@ class TicketWorkflowTest extends TestCase
     {
         $supervisor = User::factory()->create(['role' => 'supervisor']);
         $ticket = Ticket::factory()->create();
+        RoleDashboardSetting::query()->create([
+            'role' => 'supervisor',
+            'features' => array_fill_keys(array_keys(RoleDashboardSetting::FEATURES), true),
+        ]);
+
+        $this->actingAs($supervisor)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('Chat (')
+            ->assertDontSee('<th class="px-5 py-3">Komentar</th>', false);
 
         $this->actingAs($supervisor)
             ->get(route('tickets.comments', $ticket))
