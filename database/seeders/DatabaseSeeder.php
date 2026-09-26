@@ -21,7 +21,17 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'owner@example.com'],
             [
-                'name' => 'Super Admin Inprogres',
+                'name' => 'owner',
+                'role' => 'admin',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+            ],
+        );
+
+        User::updateOrCreate(
+            ['email' => 'superadmin@example.com'],
+            [
+                'name' => 'super admin',
                 'role' => 'superadmin',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
@@ -31,18 +41,8 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'supervisor@example.com'],
             [
-                'name' => 'Supervisor Inprogres',
+                'name' => 'Supervisor',
                 'role' => 'supervisor',
-                'password' => Hash::make('password'),
-                'email_verified_at' => now(),
-            ],
-        );
-
-        User::updateOrCreate(
-            ['email' => 'user@example.com'],
-            [
-                'name' => 'User Inprogres',
-                'role' => 'user',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ],
