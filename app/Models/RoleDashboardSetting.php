@@ -19,7 +19,7 @@ class RoleDashboardSetting extends Model
         'summary_pending' => 'Menunggu',
         'summary_in_progress' => 'Dikerjakan',
         'summary_completed' => 'Selesai',
-        'summary_comments' => 'Komentar owner',
+        'summary_comments' => 'Komentar staf',
     ];
 
     public const TABLE_FEATURES = [
@@ -31,6 +31,7 @@ class RoleDashboardSetting extends Model
         'target' => 'Target',
         'status' => 'Status',
         'comment_tools' => 'Komentar',
+        'new_comment' => 'New Comment',
         'completed_at' => 'Tanggal selesai',
         'edit_submission' => 'EDIT',
         'actions' => 'Aksi',
@@ -40,8 +41,8 @@ class RoleDashboardSetting extends Model
 
     public const ROLE_FEATURES = [
         'admin' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'completed_at', 'actions'],
-        'user' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'completed_at', 'edit_submission'],
-        'supervisor' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'completed_at', 'actions'],
+        'user' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'new_comment', 'completed_at', 'edit_submission'],
+        'supervisor' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'new_comment', 'completed_at', 'actions'],
         'owner' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'completed_at', 'actions'],
     ];
 

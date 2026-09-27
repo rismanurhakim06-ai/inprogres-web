@@ -30,12 +30,12 @@
                 @if ($featureVisibility['summary_comments'] ?? false)
                     @if ($showCommentTools)
                         <a href="{{ route('dashboard', ['filter' => 'comments']) }}" class="min-w-[170px] flex-1 rounded-xl border p-5 text-gray-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md {{ $selectedFilter === 'comments' ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white' }}">
-                            <p class="text-sm {{ $selectedFilter === 'comments' ? 'text-gray-300' : 'text-gray-500' }}">Komentar owner</p>
+                            <p class="text-sm {{ $selectedFilter === 'comments' ? 'text-gray-300' : 'text-gray-500' }}">Komentar staf</p>
                             <p class="mt-2 text-3xl font-semibold">{{ $stats['comments'] }}</p>
                         </a>
                     @else
                         <div class="min-w-[170px] flex-1 rounded-xl border border-gray-200 bg-white p-5 text-gray-900 shadow-sm">
-                            <p class="text-sm text-gray-500">Komentar owner</p>
+                            <p class="text-sm text-gray-500">Komentar staf</p>
                             <p class="mt-2 text-3xl font-semibold">{{ $stats['comments'] }}</p>
                         </div>
                     @endif
@@ -132,7 +132,7 @@
 
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <div class="flex items-center justify-between gap-4 border-b border-gray-200 px-5 py-4">
-                <h3 class="font-semibold text-gray-900">{{ $selectedFilter === 'comments' ? 'Pengajuan yang dikomentari owner' : ($selectedStatus === 'all' ? (auth()->user()->role === 'user' ? 'Pengajuan saya' : 'Semua tiket') : match ($selectedStatus) { 'pending' => 'Pengajuan menunggu', 'in_progress' => 'Pengajuan sedang dikerjakan', 'completed' => 'Pengajuan selesai', default => 'Pengajuan' } ) }}</h3>
+                <h3 class="font-semibold text-gray-900">{{ $selectedFilter === 'comments' ? 'Pengajuan yang dikomentari staf' : ($selectedStatus === 'all' ? (auth()->user()->role === 'user' ? 'Pengajuan saya' : 'Semua tiket') : match ($selectedStatus) { 'pending' => 'Pengajuan menunggu', 'in_progress' => 'Pengajuan sedang dikerjakan', 'completed' => 'Pengajuan selesai', default => 'Pengajuan' } ) }}</h3>
                 @if ($selectedStatus !== 'all' || $selectedFilter === 'comments')
                     <a href="{{ route('dashboard') }}" class="text-sm text-gray-500 underline hover:text-gray-900">Tampilkan semua</a>
                 @endif
@@ -148,6 +148,7 @@
                             @if ($visibleColumns['description'])<th class="px-5 py-3">Ajuan</th>@endif
                             @if ($visibleColumns['target'])<th class="px-5 py-3">Target</th>@endif
                             @if ($visibleColumns['status'])<th class="px-5 py-3">Status</th>@endif
+                            @if ($visibleColumns['new_comment'])<th class="px-5 py-3">New Comment</th>@endif
                             @if ($visibleColumns['comment_tools'])<th class="px-5 py-3">Komentar</th>@endif
                             @if ($visibleColumns['completed_at'])<th class="px-5 py-3">Tanggal selesai</th>@endif
                             @if ($visibleColumns['edit_submission'])<th class="px-5 py-3">EDIT</th>@endif
@@ -163,7 +164,11 @@
                                 default => 'priority-default',
                             })
                             <tr class="priority-row {{ $priorityClass }}">
-                                @if ($visibleColumns['ticket_number'])<td class="px-5 py-4 font-medium text-gray-900">{{ $ticket->ticket_number }}</td>@endif
+                                @if ($visibleColumns['ticket_number'])
+                                    <td class="px-5 py-4 font-medium text-gray-900">
+                                        {{ $ticket->ticket_number }}
+                                    </td>
+                                @endif
                                 @if ($visibleColumns['created_at'])<td class="whitespace-nowrap px-5 py-4 text-gray-700">{{ $ticket->created_at->timezone('Asia/Jakarta')->format('d M Y, H:i').' WIB' }}</td>@endif
                                 @if ($visibleColumns['requester_name'])<td class="px-5 py-4 font-medium text-gray-900">{{ $ticket->requester_name }}</td>@endif
                                 @if ($visibleColumns['whatsapp_number'])<td class="whitespace-nowrap px-5 py-4 text-gray-700">{{ $ticket->whatsapp_number }}</td>@endif
@@ -179,6 +184,15 @@
                                 </td>@endif
                                 @if ($visibleColumns['target'])<td class="px-5 py-4 text-gray-700">{{ $ticket->target->label() }}</td>@endif
                                 @if ($visibleColumns['status'])<td class="px-5 py-4"><span class="status-pill status-{{ $ticket->status->value }} text-xs font-medium">{{ $ticket->status->label() }}</span></td>@endif
+                                @if ($visibleColumns['new_comment'])
+                                    <td class="px-5 py-4">
+                                        @if ((auth()->user()->role === 'user' && $ticket->unread_by_user) || (auth()->user()->role === 'supervisor' && $ticket->unread_by_supervisor))
+                                            <span class="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">New Comment</span>
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
+                                    </td>
+                                @endif
                                 @if ($visibleColumns['comment_tools'])
                                     <td class="px-5 py-4">
                                         <a href="{{ route('tickets.comments', $ticket) }}" class="whitespace-nowrap rounded-md border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">Chat ({{ $ticket->comments_count ?? $ticket->comments()->count() }})</a>

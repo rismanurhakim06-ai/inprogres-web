@@ -10,10 +10,10 @@ use App\Http\Requests\UpdateOwnTicketRequest;
 use App\Http\Requests\UpdateTicketRequest;
 use App\Models\RoleDashboardSetting;
 use App\Models\Ticket;
-use App\Models\TicketComment;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -53,7 +53,7 @@ class TicketController extends Controller
             RoleDashboardSetting::defaultFeaturesFor($user->role),
             $roleDashboardSetting->features ?? [],
         );
-        $showCommentTools = ($featureVisibility['comment_tools'] ?? false) && $user->role !== 'supervisor';
+        $showCommentTools = $featureVisibility['comment_tools'] ?? false;
         $showEditSubmission = ($featureVisibility['edit_submission'] ?? false) && $user->role === 'user';
         $showActions = ($featureVisibility['actions'] ?? false) && $user->canManageTickets();
         $visibleColumns = [
@@ -63,6 +63,7 @@ class TicketController extends Controller
             'whatsapp_number' => $featureVisibility['whatsapp_number'],
             'target' => $featureVisibility['target'],
             'status' => $featureVisibility['status'],
+            'new_comment' => $featureVisibility['new_comment'] ?? false,
             'completed_at' => $featureVisibility['completed_at'],
             'comment_tools' => $showCommentTools,
             'edit_submission' => $showEditSubmission,
@@ -84,7 +85,7 @@ class TicketController extends Controller
             $selectedStatus = 'all';
             $ticketQuery->whereHas('comments', function ($query): void {
                 $query->whereHas('user', function ($query): void {
-                    $query->whereIn('role', ['owner', 'admin', 'superadmin']);
+                    $query->whereIn('role', ['owner', 'admin', 'supervisor', 'superadmin']);
                 });
             });
         } else {
@@ -95,7 +96,7 @@ class TicketController extends Controller
         $tickets = (clone $ticketQuery)->with('assignee')->withCount('comments')->latest()->paginate(15);
         $commentedTicketsQuery = (clone $baseTicketQuery)->whereHas('comments', function ($query): void {
             $query->whereHas('user', function ($query): void {
-                $query->whereIn('role', ['owner', 'admin', 'superadmin']);
+                $query->whereIn('role', ['owner', 'admin', 'supervisor', 'superadmin']);
             });
         });
         $stats = [
@@ -141,11 +142,28 @@ class TicketController extends Controller
 
     public function storeComment(StoreTicketCommentRequest $request, Ticket $ticket): RedirectResponse
     {
-        TicketComment::create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $request->user()->id,
-            'body' => $request->validated('body'),
-        ]);
+        DB::transaction(function () use ($request, $ticket): void {
+            $ticket->comments()->create([
+                'user_id' => $request->user()->id,
+                'body' => $request->validated('body'),
+            ]);
+
+            if ($ticket->status === TicketStatus::Completed) {
+                $ticket->update([
+                    'unread_by_user' => false,
+                    'unread_by_supervisor' => false,
+                ]);
+
+                return;
+            }
+
+            $isUserComment = $request->user()->role === 'user';
+
+            $ticket->update([
+                'unread_by_user' => ! $isUserComment,
+                'unread_by_supervisor' => $isUserComment,
+            ]);
+        });
 
         return redirect()->route('tickets.comments', $ticket)->with('success', 'Pesan berhasil dikirim.');
     }
@@ -153,12 +171,19 @@ class TicketController extends Controller
     public function update(UpdateTicketRequest $request, Ticket $ticket): RedirectResponse
     {
         $status = TicketStatus::from($request->validated('status'));
-        $ticket->update([
+        $attributes = [
             ...$request->validated(),
             'status' => $status,
             'updated_by' => $request->user()->id,
             'completed_at' => $status === TicketStatus::Completed ? now() : null,
-        ]);
+        ];
+
+        if ($status === TicketStatus::Completed) {
+            $attributes['unread_by_user'] = false;
+            $attributes['unread_by_supervisor'] = false;
+        }
+
+        $ticket->update($attributes);
 
         return back()->with('success', "Status {$ticket->ticket_number} diperbarui.");
     }
@@ -185,7 +210,7 @@ class TicketController extends Controller
 
         abort_unless(
             $user !== null && (($user->role === 'user' && $ticket->user_id === $user->id)
-                || in_array($user->role, ['owner', 'admin', 'superadmin'], true)),
+                || $user->canManageTickets()),
             403,
         );
     }

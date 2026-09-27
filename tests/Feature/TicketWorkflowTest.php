@@ -6,6 +6,7 @@ use App\Enums\TicketPriority;
 use App\Enums\TicketStatus;
 use App\Models\RoleDashboardSetting;
 use App\Models\Ticket;
+use App\Models\TicketComment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -169,7 +170,7 @@ class TicketWorkflowTest extends TestCase
 
     public function test_user_dashboard_only_shows_owned_tickets_and_can_edit_submission(): void
     {
-        $user = User::factory()->create(['role' => 'user']);
+        $user = User::factory()->create(['role' => 'user', 'target' => 'lppm']);
         $ownedTicket = Ticket::factory()->create(['user_id' => $user->id]);
         $otherTicket = Ticket::factory()->create();
 
@@ -253,24 +254,96 @@ class TicketWorkflowTest extends TestCase
         $this->assertDatabaseCount('ticket_comments', 0);
     }
 
-    public function test_supervisor_cannot_comment_on_a_ticket(): void
+    public function test_supervisor_comment_marks_the_ticket_unread_for_the_user(): void
     {
+        $user = User::factory()->create(['role' => 'user']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
         $supervisor = User::factory()->create(['role' => 'supervisor']);
-        $ticket = Ticket::factory()->create();
         RoleDashboardSetting::query()->create([
             'role' => 'supervisor',
-            'features' => array_fill_keys(array_keys(RoleDashboardSetting::FEATURES), true),
+            'features' => array_replace(RoleDashboardSetting::defaultFeaturesFor('supervisor'), ['comment_tools' => false]),
+        ]);
+
+        $this->actingAs($supervisor)
+            ->post(route('tickets.comments.store', $ticket), ['body' => 'Mohon lengkapi detail pengajuan.'])
+            ->assertRedirect(route('tickets.comments', $ticket));
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'unread_by_user' => true,
+            'unread_by_supervisor' => false,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertSee('New Comment');
+
+        $this->actingAs($supervisor)
+            ->get(route('dashboard'))
+            ->assertDontSee('Chat (1)')
+            ->assertSee('<th class="px-5 py-3">New Comment</th>', false);
+    }
+
+    public function test_user_comment_marks_ticket_unread_for_supervisor(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+
+        $this->actingAs($user)
+            ->post(route('tickets.comments.store', $ticket), ['body' => 'Saya sudah melengkapi detailnya.'])
+            ->assertRedirect(route('tickets.comments', $ticket));
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'unread_by_user' => false,
+            'unread_by_supervisor' => true,
         ]);
 
         $this->actingAs($supervisor)
             ->get(route('dashboard'))
-            ->assertOk()
-            ->assertDontSee('Chat (')
-            ->assertDontSee('<th class="px-5 py-3">Komentar</th>', false);
+            ->assertSee('New Comment');
+    }
+
+    public function test_reply_clears_flag_for_the_replying_party(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        $ticket = Ticket::factory()->create(['user_id' => $user->id]);
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
 
         $this->actingAs($supervisor)
-            ->get(route('tickets.comments', $ticket))
-            ->assertForbidden();
+            ->post(route('tickets.comments.store', $ticket), ['body' => 'Mohon lengkapi detail pengajuan.'])
+            ->assertRedirect(route('tickets.comments', $ticket));
+
+        $this->actingAs($user)
+            ->post(route('tickets.comments.store', $ticket), ['body' => 'Detail sudah dilengkapi.'])
+            ->assertRedirect(route('tickets.comments', $ticket));
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'unread_by_user' => false,
+            'unread_by_supervisor' => true,
+        ]);
+    }
+
+    public function test_completing_ticket_clears_both_unread_flags(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $ticket = Ticket::factory()->create([
+            'unread_by_user' => true,
+            'unread_by_supervisor' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('tickets.update', $ticket), ['status' => 'completed'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'status' => 'completed',
+            'unread_by_user' => false,
+            'unread_by_supervisor' => false,
+        ]);
     }
 
     public function test_dashboard_status_cards_filter_tickets_and_show_comment_total(): void
@@ -297,6 +370,6 @@ class TicketWorkflowTest extends TestCase
             ->assertOk()
             ->assertSee($pendingTicket->ticket_number)
             ->assertDontSee($completedTicket->ticket_number)
-            ->assertSee('Pengajuan yang dikomentari owner');
+            ->assertSee('Pengajuan yang dikomentari staf');
     }
 }

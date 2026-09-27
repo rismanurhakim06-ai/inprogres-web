@@ -24,7 +24,7 @@ class RoleDashboardSettingsTest extends TestCase
             ->assertOk()
             ->assertSee('Pengaturan tampilan role');
 
-        $this->assertSame(80, substr_count($settingsPage->getContent(), 'type="checkbox"'));
+        $this->assertSame(85, substr_count($settingsPage->getContent(), 'type="checkbox"'));
         $this->assertSame(1, substr_count($settingsPage->getContent(), 'Simpan pengaturan'));
 
         $this->put(route('settings.roles.update'), [
@@ -61,7 +61,7 @@ class RoleDashboardSettingsTest extends TestCase
             ->assertOk()
             ->assertDontSee('Total tiket')
             ->assertSee('Menunggu')
-            ->assertSee('Komentar owner')
+            ->assertSee('Komentar staf')
             ->assertDontSee('Chat (')
             ->assertDontSee('Nomor tiket')
             ->assertDontSee('<th class="px-5 py-3">Nama pengaju</th>', false)
@@ -101,6 +101,50 @@ class RoleDashboardSettingsTest extends TestCase
         }
 
         $this->assertDatabaseCount('role_dashboard_settings', 5);
+    }
+
+    public function test_superadmin_can_toggle_dashboard_features_independently_for_each_role(): void
+    {
+        $superadmin = User::factory()->create(['role' => 'superadmin']);
+        $user = User::factory()->create(['role' => 'user']);
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        Ticket::factory()->create([
+            'user_id' => $user->id,
+            'unread_by_user' => true,
+            'unread_by_supervisor' => true,
+        ]);
+
+        $settings = [];
+
+        foreach (RoleDashboardSetting::ROLE_LABELS as $role => $label) {
+            $settings[$role] = ['_present' => '1'];
+
+            foreach (array_keys(RoleDashboardSetting::FEATURES) as $feature) {
+                $settings[$role][$feature] = '0';
+            }
+        }
+
+        $settings['user']['ticket_number'] = '1';
+        $settings['user']['new_comment'] = '1';
+        $settings['supervisor']['ticket_number'] = '1';
+
+        $this->actingAs($superadmin)
+            ->put(route('settings.roles.update'), ['settings' => $settings])
+            ->assertRedirect(route('settings.roles.edit'));
+
+        $this->assertTrue(RoleDashboardSetting::query()->where('role', 'user')->firstOrFail()->features['new_comment']);
+        $this->assertFalse(RoleDashboardSetting::query()->where('role', 'supervisor')->firstOrFail()->features['new_comment']);
+        $this->assertFalse(RoleDashboardSetting::query()->where('role', 'supervisor')->firstOrFail()->features['comment_tools']);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertSee('<th class="px-5 py-3">New Comment</th>', false)
+            ->assertSee('New Comment');
+
+        $this->actingAs($supervisor)
+            ->get(route('dashboard'))
+            ->assertDontSee('New Comment')
+            ->assertDontSee('Chat (');
     }
 
     public function test_superadmin_can_comment_update_and_delete_tickets(): void

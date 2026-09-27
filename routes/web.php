@@ -32,7 +32,7 @@ Route::middleware(['auth', 'role:superadmin'])->group(function () {
     Route::delete('/pengaturan/akun/{user}', [UserManagementController::class, 'destroy'])->name('settings.accounts.destroy');
 });
 
-Route::middleware(['auth', 'role:owner,admin,user'])->group(function () {
+Route::middleware(['auth', 'role:owner,admin,supervisor,superadmin,user'])->group(function () {
     Route::get('/tickets/{ticket}/comments', [TicketController::class, 'comments'])->name('tickets.comments');
     Route::post('/tickets/{ticket}/comments', [TicketController::class, 'storeComment'])->name('tickets.comments.store');
 });

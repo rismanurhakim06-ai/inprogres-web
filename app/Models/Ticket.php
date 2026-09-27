@@ -19,7 +19,7 @@ class Ticket extends Model
     protected $fillable = [
         'user_id', 'ticket_number', 'requester_name', 'whatsapp_number', 'description',
         'priority', 'target', 'status', 'assigned_to', 'updated_by',
-        'completed_at', 'admin_note',
+        'completed_at', 'admin_note', 'unread_by_user', 'unread_by_supervisor',
     ];
 
     protected function casts(): array
@@ -29,6 +29,8 @@ class Ticket extends Model
             'target' => TicketTarget::class,
             'status' => TicketStatus::class,
             'completed_at' => 'datetime',
+            'unread_by_user' => 'boolean',
+            'unread_by_supervisor' => 'boolean',
         ];
     }
 
