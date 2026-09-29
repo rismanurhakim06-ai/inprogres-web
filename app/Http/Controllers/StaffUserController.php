@@ -18,6 +18,8 @@ class StaffUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'role' => ['required', 'string', 'in:'.implode(',', array_keys($creatableRoles))],
+            'phone_number' => ['nullable', 'string', 'max:30'],
+            'telegram_chat_id' => ['nullable', 'string', 'max:50'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -25,6 +27,8 @@ class StaffUserController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'role' => $validated['role'],
+            'phone_number' => $validated['phone_number'] ?? null,
+            'telegram_chat_id' => $validated['telegram_chat_id'] ?? null,
             'password' => $validated['password'],
             'email_verified_at' => now(),
         ]);

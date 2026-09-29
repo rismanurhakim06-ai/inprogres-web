@@ -26,6 +26,8 @@ class UserManagementController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($user->id)],
             'role' => ['required', 'string', Rule::in(array_keys(RoleDashboardSetting::ROLE_LABELS))],
+            'phone_number' => ['nullable', 'string', 'max:30'],
+            'telegram_chat_id' => ['nullable', 'string', 'max:50'],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -33,6 +35,8 @@ class UserManagementController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'role' => $validated['role'],
+            'phone_number' => $validated['phone_number'] ?? null,
+            'telegram_chat_id' => $validated['telegram_chat_id'] ?? null,
         ]);
 
         if (filled($validated['password'] ?? null)) {

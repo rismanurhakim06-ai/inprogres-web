@@ -16,6 +16,22 @@
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
+        <!-- Phone Number -->
+        <div class="mt-4">
+            <x-input-label for="phone_number" value="Nomor Telepon (Terdaftar di Telegram)" />
+            <x-text-input id="phone_number" class="block mt-1 w-full" type="tel" name="phone_number" :value="old('phone_number')" placeholder="Contoh: 08123456789" autocomplete="tel" />
+            <p class="mt-1 text-xs text-gray-500">Nomor telepon aktif yang sudah terdaftar sebagai pengguna di Telegram.</p>
+            <x-input-error :messages="$errors->get('phone_number')" class="mt-2" />
+        </div>
+
+        <!-- Telegram Chat ID -->
+        <div class="mt-4">
+            <x-input-label for="telegram_chat_id" value="ID Chat Telegram (Opsional)" />
+            <x-text-input id="telegram_chat_id" class="block mt-1 w-full" type="text" name="telegram_chat_id" :value="old('telegram_chat_id')" placeholder="Contoh: 123456789" />
+            <p class="mt-1 text-xs text-gray-500">Ketik /start di bot Anda atau cek ID via @userinfobot di Telegram.</p>
+            <x-input-error :messages="$errors->get('telegram_chat_id')" class="mt-2" />
+        </div>
+
         <!-- Password -->
         <div class="mt-4">
             <x-input-label for="password" value="Kata sandi" />

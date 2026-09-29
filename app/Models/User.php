@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'role', 'target', 'is_approved'])]
+#[Fillable(['name', 'email', 'password', 'role', 'target', 'is_approved', 'phone_number', 'telegram_chat_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -36,6 +36,19 @@ class User extends Authenticatable
     public function canManageTickets(): bool
     {
         return in_array($this->role, ['owner', 'admin', 'supervisor', 'superadmin'], true);
+    }
+
+    public function getTelegramChatId(): ?string
+    {
+        if (! empty($this->telegram_chat_id)) {
+            return (string) $this->telegram_chat_id;
+        }
+
+        if (! empty($this->phone_number) && (preg_match('/^-?\d+$/', trim($this->phone_number)) || str_starts_with(trim($this->phone_number), '@'))) {
+            return trim($this->phone_number);
+        }
+
+        return null;
     }
 
     public function tickets(): HasMany

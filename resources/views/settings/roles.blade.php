@@ -40,6 +40,16 @@
                         </select>
                     </div>
                     <div>
+                        <label for="staff-phone" class="mb-1 block text-sm font-medium text-gray-700">Nomor Telepon (Terdaftar di Telegram)</label>
+                        <input id="staff-phone" type="tel" name="phone_number" value="{{ old('phone_number') }}" maxlength="30" placeholder="Contoh: 08123456789" class="w-full rounded-md border-gray-300 text-sm focus:border-gray-700 focus:ring-gray-700">
+                        <p class="mt-1 text-xs text-gray-500">Nomor telepon aktif yang sudah terdaftar sebagai pengguna di Telegram.</p>
+                    </div>
+                    <div>
+                        <label for="staff-telegram" class="mb-1 block text-sm font-medium text-gray-700">ID Chat Telegram (Opsional)</label>
+                        <input id="staff-telegram" type="text" name="telegram_chat_id" value="{{ old('telegram_chat_id') }}" maxlength="50" placeholder="Contoh: 123456789" class="w-full rounded-md border-gray-300 text-sm focus:border-gray-700 focus:ring-gray-700">
+                        <p class="mt-1 text-xs text-gray-500">ID numerik Telegram (didapat via @userinfobot atau otomatis saat kirim kontak ke bot).</p>
+                    </div>
+                    <div>
                         <label for="staff-password" class="mb-1 block text-sm font-medium text-gray-700">Password</label>
                         <input id="staff-password" type="password" name="password" required autocomplete="new-password" class="w-full rounded-md border-gray-300 text-sm focus:border-gray-700 focus:ring-gray-700">
                     </div>

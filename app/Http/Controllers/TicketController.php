@@ -11,6 +11,7 @@ use App\Http\Requests\UpdateTicketRequest;
 use App\Models\RoleDashboardSetting;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Services\TelegramService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,12 +31,14 @@ class TicketController extends Controller
         return view('welcome', compact('ticket'));
     }
 
-    public function store(StoreTicketRequest $request): RedirectResponse
+    public function store(StoreTicketRequest $request, TelegramService $telegramService): RedirectResponse
     {
         $ticket = $request->user()->tickets()->create([
             ...$request->validated(),
             'ticket_number' => $this->generateTicketNumber(),
         ]);
+
+        $telegramService->sendTicketCreatedNotification($ticket);
 
         return redirect()->route('dashboard')
             ->with('success', 'Pengajuan berhasil dikirim.')

@@ -28,6 +28,7 @@
                             <th scope="col" class="px-5 py-3">Nama</th>
                             <th scope="col" class="px-5 py-3">Email</th>
                             <th scope="col" class="px-5 py-3">Role</th>
+                            <th scope="col" class="px-5 py-3">Kontak / Telegram</th>
                             <th scope="col" class="px-5 py-3">Password baru</th>
                             <th scope="col" class="px-5 py-3">Aksi</th>
                         </tr>
@@ -53,6 +54,10 @@
                                     </select>
                                 </td>
                                 <td class="px-5 py-4">
+                                    <input form="account-form-{{ $account->id }}" type="tel" name="phone_number" value="{{ $account->phone_number }}" maxlength="30" placeholder="No. Telp (Telegram)" aria-label="No. Telp {{ $account->email }}" class="w-44 rounded-md border-gray-300 text-xs focus:border-gray-700 focus:ring-gray-700">
+                                    <input form="account-form-{{ $account->id }}" type="text" name="telegram_chat_id" value="{{ $account->telegram_chat_id }}" maxlength="50" placeholder="Telegram Chat ID" aria-label="Chat ID {{ $account->email }}" class="mt-2 w-44 rounded-md border-gray-300 text-xs focus:border-gray-700 focus:ring-gray-700">
+                                </td>
+                                <td class="px-5 py-4">
                                     <input form="account-form-{{ $account->id }}" type="password" name="password" autocomplete="new-password" placeholder="Kosongkan jika tetap" aria-label="Password baru {{ $account->email }}" class="w-52 rounded-md border-gray-300 text-sm focus:border-gray-700 focus:ring-gray-700">
                                     <input form="account-form-{{ $account->id }}" type="password" name="password_confirmation" autocomplete="new-password" placeholder="Konfirmasi" aria-label="Konfirmasi password baru {{ $account->email }}" class="mt-2 w-52 rounded-md border-gray-300 text-sm focus:border-gray-700 focus:ring-gray-700">
                                 </td>
@@ -70,7 +75,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="5" class="px-5 py-12 text-center text-gray-500">Belum ada akun terdaftar.</td></tr>
+                            <tr><td colspan="6" class="px-5 py-12 text-center text-gray-500">Belum ada akun terdaftar.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

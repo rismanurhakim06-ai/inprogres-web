@@ -47,6 +47,20 @@
             @endif
         </div>
 
+        <div>
+            <x-input-label for="phone_number" value="Nomor Telepon (Terdaftar di Telegram)" />
+            <x-text-input id="phone_number" name="phone_number" type="tel" class="mt-1 block w-full" :value="old('phone_number', $user->phone_number)" placeholder="Contoh: 08123456789" autocomplete="tel" />
+            <p class="mt-1 text-xs text-gray-500">Nomor telepon aktif yang digunakan pada akun Telegram Anda.</p>
+            <x-input-error class="mt-2" :messages="$errors->get('phone_number')" />
+        </div>
+
+        <div>
+            <x-input-label for="telegram_chat_id" value="ID Chat Telegram (Opsional)" />
+            <x-text-input id="telegram_chat_id" name="telegram_chat_id" type="text" class="mt-1 block w-full" :value="old('telegram_chat_id', $user->telegram_chat_id)" placeholder="Contoh: 123456789" />
+            <p class="mt-1 text-xs text-gray-500">Wajib diisi bagi Admin dan Supervisor untuk menerima notifikasi tiket baru via Telegram Bot (atau otomatis saat share kontak ke bot).</p>
+            <x-input-error class="mt-2" :messages="$errors->get('telegram_chat_id')" />
+        </div>
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Save') }}</x-primary-button>
 

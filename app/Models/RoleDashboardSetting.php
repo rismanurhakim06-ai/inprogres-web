@@ -37,13 +37,17 @@ class RoleDashboardSetting extends Model
         'actions' => 'Aksi',
     ];
 
-    public const FEATURES = [...self::SUMMARY_FEATURES, ...self::TABLE_FEATURES];
+    public const NOTIFICATION_FEATURES = [
+        'telegram_notifications' => 'Notifikasi Telegram (Tiket masuk)',
+    ];
+
+    public const FEATURES = [...self::SUMMARY_FEATURES, ...self::TABLE_FEATURES, ...self::NOTIFICATION_FEATURES];
 
     public const ROLE_FEATURES = [
-        'admin' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'completed_at', 'actions'],
+        'admin' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'completed_at', 'actions', 'telegram_notifications'],
         'user' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'new_comment', 'completed_at', 'edit_submission'],
-        'supervisor' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'new_comment', 'completed_at', 'actions'],
-        'owner' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'completed_at', 'actions'],
+        'supervisor' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'new_comment', 'completed_at', 'actions', 'telegram_notifications'],
+        'owner' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'completed_at', 'actions', 'telegram_notifications'],
     ];
 
     public const CREATABLE_ROLES = [
