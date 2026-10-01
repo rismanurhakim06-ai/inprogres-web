@@ -9,14 +9,7 @@
         </div>
     </x-slot>
 
-    <div class="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8" x-data="{ showDescription: false, description: '', showNewTicketForm: @js($errors->any()) }">
-        @if (session('success'))
-            <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
-        @endif
-        @if (session('created_ticket'))
-            <div class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">Nomor tiket baru: <strong>{{ session('created_ticket') }}</strong></div>
-        @endif
-
+    <div class="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8" x-data="{ showDescription: false, description: '', showNewTicketForm: @js($errors->any()), showTicketSearch: false }">
         @if (($featureVisibility['summary_total'] ?? false) || ($featureVisibility['summary_pending'] ?? false) || ($featureVisibility['summary_in_progress'] ?? false) || ($featureVisibility['summary_completed'] ?? false) || ($featureVisibility['summary_comments'] ?? false))
             <div class="flex flex-nowrap gap-4 overflow-x-auto pb-1">
                 @foreach ([['summary_total', 'total', 'Total tiket', 'all'], ['summary_pending', 'pending', 'Menunggu', 'pending'], ['summary_in_progress', 'in_progress', 'Dikerjakan', 'in_progress'], ['summary_completed', 'completed', 'Selesai', 'completed']] as [$feature, $key, $label, $filter])
@@ -44,18 +37,27 @@
         @endif
 
         @if (auth()->user()->role === 'user')
-            <div class="flex items-center justify-between gap-4">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h3 class="font-semibold text-gray-900">Buat Ticket Baru</h3>
                     <p class="mt-1 text-sm text-gray-500">Isi formulir untuk mengirim pengajuan baru.</p>
                 </div>
-                <button
-                    type="button"
-                    class="shrink-0 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                    @click="showNewTicketForm = true; $nextTick(() => $refs.newTicketRequester.focus())"
-                    :aria-expanded="showNewTicketForm.toString()"
-                    aria-controls="new-ticket-dialog"
-                >Buat Ticket Baru</button>
+                <div class="flex flex-wrap gap-2">
+                    <button
+                        type="button"
+                        class="shrink-0 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                        @click="showTicketSearch = true; $nextTick(() => $refs.ticketSearchInput.focus())"
+                        :aria-expanded="showTicketSearch.toString()"
+                        aria-controls="ticket-search-dialog"
+                    >Cari Tiket</button>
+                    <button
+                        type="button"
+                        class="shrink-0 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                        @click="showNewTicketForm = true; $nextTick(() => $refs.newTicketRequester.focus())"
+                        :aria-expanded="showNewTicketForm.toString()"
+                        aria-controls="new-ticket-dialog"
+                    >Buat Ticket Baru</button>
+                </div>
             </div>
 
             <div
@@ -130,12 +132,73 @@
             </div>
         @endif
 
+        <div
+            id="ticket-search-dialog"
+            x-show="showTicketSearch"
+            x-cloak
+            x-transition.opacity
+            class="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-6"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ticket-search-title"
+            @keydown.escape.window="showTicketSearch = false"
+        >
+            <div class="absolute inset-0 bg-gray-900/50" @click="showTicketSearch = false"></div>
+            <section class="relative w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl" @click.stop>
+                <div class="mb-5 flex items-start justify-between gap-4">
+                    <div>
+                        <h2 id="ticket-search-title" class="text-lg font-semibold text-gray-900">Cari Tiket</h2>
+                        <p class="mt-1 text-sm text-gray-500">Cari berdasarkan nomor, nama, WhatsApp, atau isi ajuan.</p>
+                    </div>
+                    <button type="button" class="rounded-md p-1 text-2xl leading-none text-gray-500 hover:bg-gray-100 hover:text-gray-900" aria-label="Tutup pencarian tiket" @click="showTicketSearch = false">&times;</button>
+                </div>
+                <form action="{{ route('dashboard') }}" method="GET" class="space-y-4">
+                    @if ($selectedStatus !== 'all')<input type="hidden" name="status" value="{{ $selectedStatus }}">@endif
+                    @if ($selectedFilter !== 'all')<input type="hidden" name="filter" value="{{ $selectedFilter }}">@endif
+                    <div>
+                        <label for="ticket-search" class="mb-1 block text-xs font-medium text-gray-600">Kata pencarian</label>
+                        <input x-ref="ticketSearchInput" id="ticket-search" type="search" name="search" value="{{ $search }}" placeholder="Contoh: INP-260919-AB12C atau nama pengaju" class="w-full rounded-md border-gray-300 text-sm focus:border-gray-700 focus:ring-gray-700">
+                    </div>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div>
+                            <label for="ticket-sort" class="mb-1 block text-xs font-medium text-gray-600">Urutkan</label>
+                            <select id="ticket-sort" name="sort" class="w-full rounded-md border-gray-300 text-sm focus:border-gray-700 focus:ring-gray-700">
+                                <option value="created_at" @selected($sort === 'created_at')>Tanggal ajuan</option>
+                                <option value="ticket_number" @selected($sort === 'ticket_number')>Nomor tiket</option>
+                                <option value="requester_name" @selected($sort === 'requester_name')>Nama pengaju</option>
+                                <option value="whatsapp_number" @selected($sort === 'whatsapp_number')>No. WhatsApp</option>
+                                <option value="target" @selected($sort === 'target')>Target</option>
+                                <option value="status" @selected($sort === 'status')>Status</option>
+                                <option value="completed_at" @selected($sort === 'completed_at')>Tanggal selesai</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="ticket-direction" class="mb-1 block text-xs font-medium text-gray-600">Arah</label>
+                            <select id="ticket-direction" name="direction" class="w-full rounded-md border-gray-300 text-sm focus:border-gray-700 focus:ring-gray-700">
+                                <option value="desc" @selected($direction === 'desc')>Urutan turun</option>
+                                <option value="asc" @selected($direction === 'asc')>Urutan naik</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button type="button" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="showTicketSearch = false">Batal</button>
+                        <button type="submit" class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">Cari Tiket</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <div class="flex items-center justify-between gap-4 border-b border-gray-200 px-5 py-4">
                 <h3 class="font-semibold text-gray-900">{{ $selectedFilter === 'comments' ? 'Pengajuan yang dikomentari staf' : ($selectedStatus === 'all' ? (auth()->user()->role === 'user' ? 'Pengajuan saya' : 'Semua tiket') : match ($selectedStatus) { 'pending' => 'Pengajuan menunggu', 'in_progress' => 'Pengajuan sedang dikerjakan', 'completed' => 'Pengajuan selesai', default => 'Pengajuan' } ) }}</h3>
-                @if ($selectedStatus !== 'all' || $selectedFilter === 'comments')
-                    <a href="{{ route('dashboard') }}" class="text-sm text-gray-500 underline hover:text-gray-900">Tampilkan semua</a>
-                @endif
+                <div class="flex items-center gap-3">
+                    @if (auth()->user()->role !== 'user')
+                        <button type="button" class="whitespace-nowrap rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="showTicketSearch = true; $nextTick(() => $refs.ticketSearchInput.focus())" :aria-expanded="showTicketSearch.toString()" aria-controls="ticket-search-dialog">Cari Tiket</button>
+                    @endif
+                    @if ($selectedStatus !== 'all' || $selectedFilter === 'comments')
+                        <a href="{{ route('dashboard') }}" class="whitespace-nowrap text-sm text-gray-500 underline hover:text-gray-900">Tampilkan semua</a>
+                    @endif
+                </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[1160px] text-left text-sm">
@@ -163,7 +226,7 @@
                                 'critical' => 'priority-critical',
                                 default => 'priority-default',
                             })
-                            <tr class="priority-row {{ $priorityClass }}">
+                            <tr class="priority-row {{ $priorityClass }} transition-colors hover:brightness-95">
                                 @if ($visibleColumns['ticket_number'])
                                     <td class="px-5 py-4 font-medium text-gray-900">
                                         {{ $ticket->ticket_number }}
@@ -225,7 +288,7 @@
                                 @endif
                             </tr>
                         @empty
-                            <tr><td colspan="{{ max($columnCount, 1) }}" class="px-5 py-12 text-center text-gray-500">Belum ada pengajuan masuk.</td></tr>
+                            <tr><td colspan="{{ max($columnCount, 1) }}" class="px-5 py-12 text-center text-gray-500">{{ $search !== '' ? 'Tidak ada tiket yang cocok dengan pencarian.' : 'Belum ada pengajuan masuk.' }}</td></tr>
                         @endforelse
                     </tbody>
                 </table>

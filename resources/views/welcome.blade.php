@@ -7,6 +7,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="portal-shell">
+    <x-flash-toast />
     <header class="portal-nav">
         <a href="#" style="display: flex; align-items: center; gap: 10px; text-decoration: none; margin-right: auto;">
     <img src="/img/polmanda2.png" alt="Logo" style="width: 60px; height: auto;">
@@ -20,7 +21,6 @@
             <h1>Setiap pengajuan,<em>terlihat progresnya.</em></h1><br>
             <p class="hero-copy">Kirim pengajuan ke tim yang tepat atau pantau statusnya dengan satu nomor tiket.</p>
         </section>
-        @if (session('success'))<div class="notice success">{{ session('success') }}</div>@endif
         <section class="portal-grid">
             <div class="track-panel panel-card">
                 <div class="panel-kicker"><span class="step-dot">01</span> LACAK PENGAJUAN</div>
@@ -43,7 +43,7 @@
                         <span>Ingin mengajukan tiket?</span> Masuk untuk membuat tiket <span class="new-ticket-arrow">↗</span>
                     </a>
                     <a class="new-ticket-button" href="{{ route('register') }}">
-                        <span>Belum punya akun?</span> Daftar sebagai user <span class="new-ticket-arrow">↗</span>
+                        <span>Belum punya akun?</span> Registrasi Akun <span class="new-ticket-arrow">↗</span>
                     </a>
                 @else
                     <p class="new-ticket-button"><span>Pengajuan tiket baru tersedia untuk akun user.</span></p>

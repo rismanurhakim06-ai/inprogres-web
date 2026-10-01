@@ -7,10 +7,6 @@
     </x-slot>
 
     <div class="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-        @if (session('success'))
-            <div class="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
-        @endif
-
         <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
             <div class="border-b border-gray-200 px-5 py-4">
                 <h3 class="font-semibold text-gray-900">Pendaftaran yang menunggu</h3>

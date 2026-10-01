@@ -54,6 +54,11 @@ class TicketWorkflowTest extends TestCase
         $this->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Buat Ticket Baru')
+            ->assertSee('Cari Tiket')
+            ->assertSee('x-show="showTicketSearch"', false)
+            ->assertSee('role="status"', false)
+            ->assertSee('fixed inset-0 z-[100] flex items-center justify-center', false)
+            ->assertSee('&#10003;', false)
             ->assertSee('action="'.route('tickets.store').'"', false)
             ->assertSee('name="description"', false)
             ->assertSee('role="dialog"', false)
@@ -371,5 +376,54 @@ class TicketWorkflowTest extends TestCase
             ->assertSee($pendingTicket->ticket_number)
             ->assertDontSee($completedTicket->ticket_number)
             ->assertSee('Pengajuan yang dikomentari staf');
+    }
+
+    public function test_admin_can_search_tickets_and_sort_matching_results(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $laterNameTicket = Ticket::factory()->create([
+            'requester_name' => 'Zahra Hidayat',
+            'description' => 'Mohon pembaruan portal akademik.',
+        ]);
+        $earlierNameTicket = Ticket::factory()->create([
+            'requester_name' => 'Alya Pratama',
+            'description' => 'Perlu pembaruan portal layanan.',
+        ]);
+        $unmatchedTicket = Ticket::factory()->create([
+            'requester_name' => 'Bima Saputra',
+            'description' => 'Perbaikan jaringan kantor.',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('dashboard', [
+            'search' => 'pembaruan portal',
+            'sort' => 'requester_name',
+            'direction' => 'asc',
+        ]));
+
+        $response->assertOk()
+            ->assertSee($earlierNameTicket->ticket_number)
+            ->assertSee($laterNameTicket->ticket_number)
+            ->assertDontSee($unmatchedTicket->ticket_number);
+        $this->assertTrue(
+            strpos($response->getContent(), 'Alya Pratama') < strpos($response->getContent(), 'Zahra Hidayat'),
+        );
+    }
+
+    public function test_user_ticket_search_does_not_show_another_users_ticket(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+        $ownedTicket = Ticket::factory()->create([
+            'user_id' => $user->id,
+            'description' => 'Pencarian khusus untuk pembaruan portal.',
+        ]);
+        $otherTicket = Ticket::factory()->create([
+            'description' => 'Pencarian khusus untuk portal lainnya.',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard', ['search' => 'pencarian khusus']))
+            ->assertOk()
+            ->assertSee($ownedTicket->ticket_number)
+            ->assertDontSee($otherTicket->ticket_number);
     }
 }

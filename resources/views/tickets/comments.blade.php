@@ -10,10 +10,6 @@
     </x-slot>
 
     <div class="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-        @if (session('success'))
-            <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('success') }}</div>
-        @endif
-
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-4">
                 <div>

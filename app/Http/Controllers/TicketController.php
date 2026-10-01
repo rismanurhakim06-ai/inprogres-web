@@ -96,7 +96,35 @@ class TicketController extends Controller
             $selectedFilter = 'all';
         }
 
-        $tickets = (clone $ticketQuery)->with('assignee')->withCount('comments')->latest()->paginate(15);
+        $search = $request->string('search')->trim()->toString();
+        if ($search !== '') {
+            $ticketQuery->where(function ($query) use ($search): void {
+                foreach (['ticket_number', 'requester_name', 'whatsapp_number', 'description'] as $column) {
+                    $query->orWhere($column, 'like', '%'.$search.'%');
+                }
+            });
+        }
+
+        $sortableColumns = [
+            'created_at',
+            'ticket_number',
+            'requester_name',
+            'whatsapp_number',
+            'target',
+            'status',
+            'completed_at',
+        ];
+        $sort = $request->string('sort')->toString();
+        $sort = in_array($sort, $sortableColumns, true) ? $sort : 'created_at';
+        $direction = $request->string('direction')->toString();
+        $direction = in_array($direction, ['asc', 'desc'], true) ? $direction : 'desc';
+
+        $tickets = (clone $ticketQuery)
+            ->with('assignee')
+            ->withCount('comments')
+            ->orderBy($sort, $direction)
+            ->orderByDesc('id')
+            ->paginate(15);
         $commentedTicketsQuery = (clone $baseTicketQuery)->whereHas('comments', function ($query): void {
             $query->whereHas('user', function ($query): void {
                 $query->whereIn('role', ['owner', 'admin', 'supervisor', 'superadmin']);
@@ -110,7 +138,7 @@ class TicketController extends Controller
             'comments' => $commentedTicketsQuery->count(),
         ];
 
-        return view('dashboard', compact('tickets', 'stats', 'selectedStatus', 'selectedFilter', 'featureVisibility', 'showCommentTools', 'showEditSubmission', 'showActions', 'visibleColumns', 'columnCount'));
+        return view('dashboard', compact('tickets', 'stats', 'selectedStatus', 'selectedFilter', 'search', 'sort', 'direction', 'featureVisibility', 'showCommentTools', 'showEditSubmission', 'showActions', 'visibleColumns', 'columnCount'));
     }
 
     public function edit(Ticket $ticket): View

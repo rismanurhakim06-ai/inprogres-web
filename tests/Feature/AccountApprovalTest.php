@@ -30,6 +30,11 @@ class AccountApprovalTest extends TestCase
             ->assertRedirect(route('account-approvals.index'))
             ->assertSessionHas('success', 'Akun Pending User berhasil disetujui.');
 
+        $this->get(route('account-approvals.index'))
+            ->assertOk()
+            ->assertSee('role="status"', false)
+            ->assertSee('Akun Pending User berhasil disetujui.');
+
         $this->assertDatabaseHas('users', ['id' => $pendingUser->id, 'is_approved' => true]);
 
         $this->post('/logout')->assertRedirect('/');
