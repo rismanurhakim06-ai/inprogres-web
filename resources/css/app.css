@@ -4,10 +4,11 @@
 @tailwind utilities;
 
 .priority-row > td { transition: background-color .2s ease; }
-.priority-relaxed > td { background-color: #dcfce7; }
-.priority-urgent > td { background-color: #fef3c7; }
-.priority-critical > td { background-color: #fee2e2; }
+.priority-relaxed > td { background-color: #f0fdf4; }
+.priority-urgent > td { background-color: #fffbeb; }
+.priority-critical > td { background-color: #fef2f2; }
 .priority-default > td { background-color: #ffffff; }
+.priority-row:hover > td { filter: brightness(.985); }
 
 :root { --ink: #102a43; --paper: #f4f8fc; --blue: #1769d2; --blue-dark: #0b4da2; --blue-soft: #e5f0ff; --line: #d4e1ef; --muted: #5f7185; --white: #ffffff; }
 * { box-sizing: border-box; }

@@ -13,8 +13,11 @@ use App\Services\TelegramService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use RuntimeException;
+use Throwable;
 
 class TicketController extends Controller
 {
@@ -31,10 +34,52 @@ class TicketController extends Controller
 
     public function store(StoreTicketRequest $request, TelegramService $telegramService): RedirectResponse
     {
-        $ticket = $request->user()->tickets()->create([
-            ...$request->validated(),
-            'ticket_number' => $this->generateTicketNumber(),
-        ]);
+        $validated = $request->validated();
+        $uploadedFiles = $request->file('attachments', []);
+        unset($validated['attachments']);
+
+        $disk = Storage::disk('local');
+        $storedPaths = [];
+        $attachmentAttributes = [];
+
+        try {
+            foreach ($uploadedFiles as $uploadedFile) {
+                $path = $uploadedFile->store('ticket-attachments', 'local');
+
+                if (! is_string($path)) {
+                    throw new RuntimeException('Unable to store ticket attachment.');
+                }
+
+                $storedPaths[] = $path;
+                $attachmentAttributes[] = [
+                    'original_name' => $uploadedFile->getClientOriginalName(),
+                    'path' => $path,
+                    'mime_type' => $uploadedFile->getMimeType() ?? 'application/octet-stream',
+                    'size' => $uploadedFile->getSize(),
+                ];
+            }
+
+            $ticket = DB::transaction(function () use ($request, $validated, $attachmentAttributes): Ticket {
+                $ticket = $request->user()->tickets()->create([
+                    ...$validated,
+                    'ticket_number' => $this->generateTicketNumber(),
+                ]);
+
+                $ticket->attachments()->createMany($attachmentAttributes);
+
+                return $ticket;
+            });
+        } catch (Throwable $exception) {
+            foreach ($storedPaths as $storedPath) {
+                if ($disk->exists($storedPath) && ! $disk->delete($storedPath)) {
+                    report($exception);
+
+                    throw new RuntimeException('Unable to clean up ticket attachment after a failed submission.', previous: $exception);
+                }
+            }
+
+            throw $exception;
+        }
 
         $telegramService->sendTicketCreatedNotification($ticket);
 
@@ -118,7 +163,7 @@ class TicketController extends Controller
         $direction = in_array($direction, ['asc', 'desc'], true) ? $direction : 'desc';
 
         $tickets = (clone $ticketQuery)
-            ->with('assignee')
+            ->with(['assignee', 'attachments'])
             ->withCount('comments')
             ->orderBy($sort, $direction)
             ->orderByDesc('id')
@@ -141,12 +186,67 @@ class TicketController extends Controller
 
     public function edit(Ticket $ticket): View
     {
+        abort_unless($ticket->user_id === request()->user()->id, 404);
+
+        $ticket->load('attachments');
+
         return view('tickets.edit', compact('ticket'));
     }
 
     public function updateOwn(UpdateOwnTicketRequest $request, Ticket $ticket): RedirectResponse
     {
-        $ticket->update($request->validated());
+        $validated = $request->validated();
+        $uploadedFiles = $request->file('attachments', []);
+        $removeAttachmentIds = $validated['remove_attachments'] ?? [];
+        unset($validated['attachments'], $validated['remove_attachments']);
+
+        $disk = Storage::disk('local');
+        $storedPaths = [];
+        $attachmentAttributes = [];
+
+        try {
+            foreach ($uploadedFiles as $uploadedFile) {
+                $path = $uploadedFile->store('ticket-attachments', 'local');
+
+                if (! is_string($path)) {
+                    throw new RuntimeException('Unable to store ticket attachment.');
+                }
+
+                $storedPaths[] = $path;
+                $attachmentAttributes[] = [
+                    'original_name' => $uploadedFile->getClientOriginalName(),
+                    'path' => $path,
+                    'mime_type' => $uploadedFile->getMimeType() ?? 'application/octet-stream',
+                    'size' => $uploadedFile->getSize(),
+                ];
+            }
+
+            $attachmentsToRemove = $ticket->attachments()
+                ->whereIn('id', $removeAttachmentIds)
+                ->get();
+
+            DB::transaction(function () use ($ticket, $validated, $attachmentAttributes): void {
+                $ticket->update($validated);
+
+                if ($attachmentAttributes !== []) {
+                    $ticket->attachments()->createMany($attachmentAttributes);
+                }
+            });
+        } catch (Throwable $exception) {
+            foreach ($storedPaths as $storedPath) {
+                if ($disk->exists($storedPath) && ! $disk->delete($storedPath)) {
+                    report($exception);
+
+                    throw new RuntimeException('Unable to clean up ticket attachment after a failed update.', previous: $exception);
+                }
+            }
+
+            throw $exception;
+        }
+
+        foreach ($attachmentsToRemove as $attachment) {
+            $attachment->delete();
+        }
 
         return redirect()->route('dashboard')->with('success', "Pengajuan {$ticket->ticket_number} diperbarui.");
     }

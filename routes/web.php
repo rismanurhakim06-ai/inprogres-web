@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleDashboardSettingsController;
 use App\Http\Controllers\StaffUserController;
 use App\Http\Controllers\TelegramWebhookController;
+use App\Http\Controllers\TicketAttachmentController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserManagementController;
 use Illuminate\Support\Facades\Route;
@@ -12,6 +13,9 @@ use Illuminate\Support\Facades\Route;
 Route::post('/telegram/webhook', TelegramWebhookController::class)->name('telegram.webhook');
 
 Route::get('/', [TicketController::class, 'index'])->name('home');
+Route::get('/tickets/{ticket}/attachments/{attachment}', [TicketAttachmentController::class, 'show'])
+    ->middleware('auth')
+    ->name('tickets.attachments.show');
 Route::post('/tickets', [TicketController::class, 'store'])
     ->middleware(['auth', 'role:user'])
     ->name('tickets.store');

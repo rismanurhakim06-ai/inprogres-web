@@ -22,6 +22,13 @@ class Ticket extends Model
         'completed_at', 'admin_note', 'unread_by_user', 'unread_by_supervisor',
     ];
 
+    protected static function booted(): void
+    {
+        static::deleting(function (self $ticket): void {
+            $ticket->attachments()->get()->each->delete();
+        });
+    }
+
     protected function casts(): array
     {
         return [
@@ -64,5 +71,10 @@ class Ticket extends Model
     public function comments(): HasMany
     {
         return $this->hasMany(TicketComment::class);
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(TicketAttachment::class);
     }
 }

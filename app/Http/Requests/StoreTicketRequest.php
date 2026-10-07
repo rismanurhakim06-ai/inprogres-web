@@ -30,6 +30,26 @@ class StoreTicketRequest extends FormRequest
             'description' => ['required', 'string', 'min:10', 'max:5000'],
             'priority' => ['required', new Enum(TicketPriority::class)],
             'target' => ['required', 'string', 'max:255'],
+            'attachments' => ['nullable', 'array', 'max:5'],
+            'attachments.*' => [
+                'file',
+                'mimes:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx',
+                'extensions:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx',
+                'max:10240',
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'attachments.max' => 'Lampiran maksimal 5 file.',
+            'attachments.*.mimes' => 'Lampiran harus berupa gambar, PDF, Word, atau Excel yang valid.',
+            'attachments.*.extensions' => 'Format lampiran yang didukung: JPG, PNG, WEBP, PDF, DOC, DOCX, XLS, dan XLSX.',
+            'attachments.*.max' => 'Ukuran setiap lampiran maksimal 10 MB.',
         ];
     }
 }

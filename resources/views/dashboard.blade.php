@@ -1,35 +1,92 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-600">Workspace operasional</p>
-                <h2 class="font-semibold text-2xl text-gray-900">Daftar pengajuan</h2>
-            </div>
-            <span class="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-600">{{ auth()->user()->role }}</span>
-        </div>
-    </x-slot>
-
-    <div class="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8" x-data="{ showDescription: false, description: '', showNewTicketForm: @js($errors->any()), showTicketSearch: false }">
+    <div class="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8" x-data="{ showDescription: false, description: '', showNewTicketForm: @js($errors->any()), showTicketSearch: false }">
         @if (($featureVisibility['summary_total'] ?? false) || ($featureVisibility['summary_pending'] ?? false) || ($featureVisibility['summary_in_progress'] ?? false) || ($featureVisibility['summary_completed'] ?? false) || ($featureVisibility['summary_comments'] ?? false))
-            <div class="flex flex-nowrap gap-4 overflow-x-auto pb-1">
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-4">
                 @foreach ([['summary_total', 'total', 'Total tiket', 'all'], ['summary_pending', 'pending', 'Menunggu', 'pending'], ['summary_in_progress', 'in_progress', 'Dikerjakan', 'in_progress'], ['summary_completed', 'completed', 'Selesai', 'completed']] as [$feature, $key, $label, $filter])
                     @if ($featureVisibility[$feature] ?? false)
-                        <a href="{{ route('dashboard', $filter === 'all' ? [] : ['status' => $filter]) }}" class="min-w-[170px] flex-1 rounded-xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md {{ $selectedStatus === $filter ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-900' }}">
-                            <p class="text-sm {{ $selectedStatus === $filter ? 'text-gray-300' : 'text-gray-500' }}">{{ $label }}</p>
-                            <p class="mt-2 text-3xl font-semibold">{{ $stats[$key] }}</p>
+                        @php($summaryColor = match ($key) {
+                            'pending' => 'bg-amber-50 text-amber-600',
+                            'in_progress' => 'bg-blue-50 text-blue-600',
+                            'completed' => 'bg-emerald-50 text-emerald-600',
+                            default => 'bg-slate-100 text-slate-500',
+                        })
+                        @php($summaryDotColor = match ($key) {
+                            'pending' => 'bg-amber-500',
+                            'in_progress' => 'bg-blue-500',
+                            'completed' => 'bg-emerald-500',
+                            default => 'bg-slate-400',
+                        })
+                        @php($summaryDescription = match ($key) {
+                            'total' => 'Seluruh ajuan masuk',
+                            'pending' => 'Perlu respons / approval',
+                            'in_progress' => 'Sedang ditangani tim',
+                            default => 'Kasus terselesaikan',
+                        })
+                        <a href="{{ route('dashboard', $filter === 'all' ? [] : ['status' => $filter]) }}" class="group flex min-h-36 min-w-0 flex-col justify-between rounded-2xl border p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md {{ $selectedStatus === $filter ? 'border-slate-900 bg-slate-950 text-white shadow-slate-900/10' : 'border-slate-200 bg-white text-slate-900' }}">
+                            <div class="flex items-center justify-between gap-3">
+                                <p class="text-sm font-medium {{ $selectedStatus === $filter ? 'text-slate-300' : 'text-slate-600' }}">{{ $label }}</p>
+                                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl {{ $selectedStatus === $filter ? 'bg-white/10 text-slate-200' : $summaryColor }}">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                        @if ($key === 'total')
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 7.5A2.5 2.5 0 0 1 7.5 5h9A2.5 2.5 0 0 1 19 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 5 16.5v-9Z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 9h6m-6 3h6m-6 3h3" />
+                                        @elseif ($key === 'pending')
+                                            <circle cx="12" cy="12" r="8" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l2.5 1.5" />
+                                        @elseif ($key === 'in_progress')
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m13 2-8 12h6l-1 8 9-13h-6l1-7Z" />
+                                        @else
+                                            <circle cx="12" cy="12" r="8" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m8.5 12 2.25 2.25L15.5 9.5" />
+                                        @endif
+                                    </svg>
+                                </span>
+                            </div>
+                            <div>
+                                <p class="text-3xl font-bold tracking-tight">{{ $stats[$key] }}</p>
+                                <p class="mt-2 flex items-center gap-1.5 text-xs {{ $selectedStatus === $filter ? 'text-slate-300' : 'text-slate-500' }}">
+                                    <span class="h-1.5 w-1.5 rounded-full {{ $selectedStatus === $filter ? 'bg-white/70' : $summaryDotColor }}"></span>
+                                    {{ $summaryDescription }}
+                                </p>
+                            </div>
                         </a>
                     @endif
                 @endforeach
                 @if ($featureVisibility['summary_comments'] ?? false)
                     @if ($showCommentTools)
-                        <a href="{{ route('dashboard', ['filter' => 'comments']) }}" class="min-w-[170px] flex-1 rounded-xl border p-5 text-gray-900 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md {{ $selectedFilter === 'comments' ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white' }}">
-                            <p class="text-sm {{ $selectedFilter === 'comments' ? 'text-gray-300' : 'text-gray-500' }}">Komentar staf</p>
-                            <p class="mt-2 text-3xl font-semibold">{{ $stats['comments'] }}</p>
+                        <a href="{{ route('dashboard', ['filter' => 'comments']) }}" class="group flex min-h-36 min-w-0 flex-col justify-between rounded-2xl border p-5 text-slate-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md {{ $selectedFilter === 'comments' ? 'border-slate-900 bg-slate-950 text-white shadow-slate-900/10' : 'border-slate-200 bg-white' }}">
+                            <div class="flex items-center justify-between gap-3">
+                                <p class="text-sm font-medium {{ $selectedFilter === 'comments' ? 'text-slate-300' : 'text-slate-600' }}">Komentar staf</p>
+                                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl {{ $selectedFilter === 'comments' ? 'bg-white/10 text-slate-200' : 'bg-violet-50 text-violet-600' }}">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 18.5 3.5 20l1-4A8.5 8.5 0 1 1 7 18.5Z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8m-8 4h5" />
+                                    </svg>
+                                </span>
+                            </div>
+                            <div>
+                                <p class="text-3xl font-bold tracking-tight">{{ $stats['comments'] }}</p>
+                                <p class="mt-2 flex items-center gap-1.5 text-xs {{ $selectedFilter === 'comments' ? 'text-slate-300' : 'text-slate-500' }}">
+                                    <span class="h-1.5 w-1.5 rounded-full {{ $selectedFilter === 'comments' ? 'bg-white/70' : 'bg-violet-500' }}"></span>
+                                    Interaksi aktif
+                                </p>
+                            </div>
                         </a>
                     @else
-                        <div class="min-w-[170px] flex-1 rounded-xl border border-gray-200 bg-white p-5 text-gray-900 shadow-sm">
-                            <p class="text-sm text-gray-500">Komentar staf</p>
-                            <p class="mt-2 text-3xl font-semibold">{{ $stats['comments'] }}</p>
+                        <div class="flex min-h-36 min-w-0 flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 text-slate-900 shadow-sm">
+                            <div class="flex items-center justify-between gap-3">
+                                <p class="text-sm font-medium text-slate-600">Komentar staf</p>
+                                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-600">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 18.5 3.5 20l1-4A8.5 8.5 0 1 1 7 18.5Z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8m-8 4h5" />
+                                    </svg>
+                                </span>
+                            </div>
+                            <div>
+                                <p class="text-3xl font-bold tracking-tight">{{ $stats['comments'] }}</p>
+                                <p class="mt-2 flex items-center gap-1.5 text-xs text-slate-500"><span class="h-1.5 w-1.5 rounded-full bg-violet-500"></span>Interaksi aktif</p>
+                            </div>
                         </div>
                     @endif
                 @endif
@@ -38,21 +95,21 @@
 
         @if (auth()->user()->role === 'user')
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h3 class="font-semibold text-gray-900">Buat Ticket Baru</h3>
-                    <p class="mt-1 text-sm text-gray-500">Isi formulir untuk mengirim pengajuan baru.</p>
+                <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4">
+                    <h3 class="font-semibold text-slate-900">Buat Ticket Baru</h3>
+                    <p class="mt-1 text-sm text-slate-500">Isi formulir untuk mengirim pengajuan baru.</p>
                 </div>
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap gap-2 sm:shrink-0">
                     <button
                         type="button"
-                        class="shrink-0 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                        class="shrink-0 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
                         @click="showTicketSearch = true; $nextTick(() => $refs.ticketSearchInput.focus())"
                         :aria-expanded="showTicketSearch.toString()"
                         aria-controls="ticket-search-dialog"
                     >Cari Tiket</button>
                     <button
                         type="button"
-                        class="shrink-0 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                        class="shrink-0 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
                         @click="showNewTicketForm = true; $nextTick(() => $refs.newTicketRequester.focus())"
                         :aria-expanded="showNewTicketForm.toString()"
                         aria-controls="new-ticket-dialog"
@@ -84,7 +141,7 @@
                             @click="showNewTicketForm = false"
                         >&times;</button>
                     </div>
-                    <form action="{{ route('tickets.store') }}" method="POST" class="mt-5 space-y-4">
+                    <form action="{{ route('tickets.store') }}" method="POST" enctype="multipart/form-data" class="mt-5 space-y-4">
                         @csrf
                         @if ($errors->any())
                             <div class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{{ $errors->first() }}</div>
@@ -119,6 +176,19 @@
                             <div class="sm:col-span-2">
                                 <label for="new-ticket-description" class="mb-1 block text-sm font-medium text-gray-700">Isi ajuan</label>
                                 <textarea id="new-ticket-description" name="description" rows="4" placeholder="Jelaskan masalah atau kebutuhan Anda..." required class="w-full rounded-md border-gray-300 text-sm focus:border-gray-700 focus:ring-gray-700">{{ old('description') }}</textarea>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label for="new-ticket-attachments" class="mb-1 block text-sm font-medium text-gray-700">Lampiran (opsional)</label>
+                                <input id="new-ticket-attachments" name="attachments[]" type="file" multiple accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx,image/jpeg,image/png,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="w-full rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100 focus:border-blue-500 focus:ring-blue-500">
+                                <p class="mt-2 text-xs text-slate-500">Maksimal 5 file, 10 MB per file. Format: JPG, PNG, WEBP, PDF, DOC, DOCX, XLS, XLSX.</p>
+                                @error('attachments')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                                @foreach ($errors->get('attachments.*') as $attachmentErrors)
+                                    @foreach ($attachmentErrors as $attachmentError)
+                                        <p class="mt-1 text-sm text-red-600">{{ $attachmentError }}</p>
+                                    @endforeach
+                                @endforeach
                             </div>
                         </div>
                         <div class="flex justify-end gap-3">
@@ -186,34 +256,43 @@
             </section>
         </div>
 
-        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div class="flex items-center justify-between gap-4 border-b border-gray-200 px-5 py-4">
-                <h3 class="font-semibold text-gray-900">{{ $selectedFilter === 'comments' ? 'chat' : ($selectedStatus === 'all' ? (auth()->user()->role === 'user' ? 'Pengajuan saya' : 'Semua tiket') : match ($selectedStatus) { 'pending' => 'Pengajuan menunggu', 'in_progress' => 'Pengajuan sedang dikerjakan', 'completed' => 'Pengajuan selesai', default => 'Pengajuan' } ) }}</h3>
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div class="flex items-center gap-3">
+                    <h3 class="font-semibold text-slate-900">{{ $selectedFilter === 'comments' ? 'chat' : ($selectedStatus === 'all' ? (auth()->user()->role === 'user' ? 'Pengajuan saya' : 'Semua tiket') : match ($selectedStatus) { 'pending' => 'Pengajuan menunggu', 'in_progress' => 'Pengajuan sedang dikerjakan', 'completed' => 'Pengajuan selesai', default => 'Pengajuan' } ) }}</h3>
+                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{{ number_format($tickets->total(), 0, ',', '.') }} tiket</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
                     @if (auth()->user()->role !== 'user')
-                        <button type="button" class="whitespace-nowrap rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="showTicketSearch = true; $nextTick(() => $refs.ticketSearchInput.focus())" :aria-expanded="showTicketSearch.toString()" aria-controls="ticket-search-dialog">Cari Tiket</button>
+                        <button type="button" class="inline-flex items-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm font-medium text-slate-600 transition hover:bg-white hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-400" @click="showTicketSearch = true; $nextTick(() => $refs.ticketSearchInput.focus())" :aria-expanded="showTicketSearch.toString()" aria-controls="ticket-search-dialog">
+                            <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                <circle cx="10.8" cy="10.8" r="6.3" />
+                                <path stroke-linecap="round" d="m15.5 15.5 4 4" />
+                            </svg>
+                            Cari Tiket
+                        </button>
                     @endif
                     @if ($selectedStatus !== 'all' || $selectedFilter === 'comments')
-                        <a href="{{ route('dashboard') }}" class="whitespace-nowrap text-sm text-gray-500 underline hover:text-gray-900">Tampilkan semua</a>
+                        <a href="{{ route('dashboard') }}" class="whitespace-nowrap rounded-xl border border-slate-200 px-3.5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">Tampilkan semua</a>
                     @endif
                 </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full min-w-[1160px] text-left text-sm">
-                    <thead class="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+                    <thead class="bg-slate-50 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                         <tr>
-                            @if ($visibleColumns['ticket_number'])<th class="px-5 py-3">Nomor tiket</th>@endif
-                            @if ($visibleColumns['created_at'])<th class="px-5 py-3">Tanggal ajuan</th>@endif
-                            @if ($visibleColumns['requester_name'])<th class="px-5 py-3">Nama pengaju</th>@endif
-                            @if ($visibleColumns['whatsapp_number'])<th class="px-5 py-3">No. WhatsApp</th>@endif
-                            @if ($visibleColumns['description'])<th class="px-5 py-3">Ajuan</th>@endif
-                            @if ($visibleColumns['target'])<th class="px-5 py-3">Target</th>@endif
-                            @if ($visibleColumns['status'])<th class="px-5 py-3">Status</th>@endif
-                            @if ($visibleColumns['new_comment'])<th class="px-5 py-3">New Comment</th>@endif
-                            @if ($visibleColumns['comment_tools'])<th class="px-5 py-3">Komentar</th>@endif
-                            @if ($visibleColumns['completed_at'])<th class="px-5 py-3">Tanggal selesai</th>@endif
-                            @if ($visibleColumns['edit_submission'])<th class="px-5 py-3">EDIT</th>@endif
-                            @if ($visibleColumns['actions'])<th class="px-5 py-3">Aksi</th>@endif
+                            @if ($visibleColumns['ticket_number'])<th class="px-5 py-3.5">Nomor tiket</th>@endif
+                            @if ($visibleColumns['created_at'])<th class="px-5 py-3.5">Tanggal ajuan</th>@endif
+                            @if ($visibleColumns['requester_name'])<th class="px-5 py-3.5">Nama pengaju</th>@endif
+                            @if ($visibleColumns['whatsapp_number'])<th class="px-5 py-3.5">No. WhatsApp</th>@endif
+                            @if ($visibleColumns['description'])<th class="px-5 py-3.5">Ajuan</th>@endif
+                            @if ($visibleColumns['target'])<th class="px-5 py-3.5">Target</th>@endif
+                            @if ($visibleColumns['status'])<th class="px-5 py-3.5">Status</th>@endif
+                            @if ($visibleColumns['new_comment'])<th class="px-5 py-3.5">New Comment</th>@endif
+                            @if ($visibleColumns['comment_tools'])<th class="px-5 py-3.5">Komentar</th>@endif
+                            @if ($visibleColumns['completed_at'])<th class="px-5 py-3.5">Tanggal selesai</th>@endif
+                            @if ($visibleColumns['edit_submission'])<th class="px-5 py-3.5">EDIT</th>@endif
+                            @if ($visibleColumns['actions'])<th class="px-5 py-3.5">Aksi</th>@endif
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -224,31 +303,67 @@
                                 'critical' => 'priority-critical',
                                 default => 'priority-default',
                             })
-                            <tr class="priority-row {{ $priorityClass }} transition-colors hover:brightness-95">
+                            @php($priorityBadgeClass = match ($ticket->priority->value) {
+                                'relaxed' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
+                                'urgent' => 'border-amber-200 bg-amber-50 text-amber-700',
+                                'critical' => 'border-red-200 bg-red-50 text-red-700',
+                                default => 'border-slate-200 bg-slate-50 text-slate-600',
+                            })
+                            <tr class="priority-row {{ $priorityClass }} transition-colors">
                                 @if ($visibleColumns['ticket_number'])
-                                    <td class="px-5 py-4 font-medium text-gray-900">
-                                        {{ $ticket->ticket_number }}
+                                    <td class="px-5 py-4 font-medium text-slate-900">
+                                        <div class="flex min-w-28 flex-col items-start gap-1.5">
+                                            <span class="rounded-md border border-blue-100 bg-blue-50 px-2 py-1 font-mono text-[11px] font-semibold text-blue-700">{{ $ticket->ticket_number }}</span>
+                                            <span class="inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold {{ $priorityBadgeClass }}">{{ $ticket->priority->label() }}</span>
+                                        </div>
                                     </td>
                                 @endif
-                                @if ($visibleColumns['created_at'])<td class="whitespace-nowrap px-5 py-4 text-gray-700">{{ $ticket->created_at->timezone('Asia/Jakarta')->format('d M Y, H:i').' WIB' }}</td>@endif
-                                @if ($visibleColumns['requester_name'])<td class="px-5 py-4 font-medium text-gray-900">{{ $ticket->requester_name }}</td>@endif
-                                @if ($visibleColumns['whatsapp_number'])<td class="whitespace-nowrap px-5 py-4 text-gray-700">{{ $ticket->whatsapp_number }}</td>@endif
-                                @if ($visibleColumns['description'])<td class="max-w-xs px-5 py-4 text-gray-700">
-                                    <button
-                                        type="button"
-                                        class="block max-w-xs truncate text-left hover:text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                                        title="Klik untuk melihat ajuan lengkap"
-                                        @click="description = @js($ticket->description); showDescription = true"
-                                    >
-                                        {{ \Illuminate\Support\Str::limit($ticket->description, 80) }}
-                                    </button>
-                                </td>@endif
-                                @if ($visibleColumns['target'])<td class="px-5 py-4 text-gray-700">{{ $ticket->targetLabel() }}</td>@endif
+                                @if ($visibleColumns['created_at'])<td class="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{{ $ticket->created_at->timezone('Asia/Jakarta')->format('d M Y, H:i').' WIB' }}</td>@endif
+                                @if ($visibleColumns['requester_name'])<td class="px-5 py-4 font-medium text-slate-800">{{ $ticket->requester_name }}</td>@endif
+                                @if ($visibleColumns['whatsapp_number'])<td class="whitespace-nowrap px-5 py-4 text-xs text-slate-600">{{ $ticket->whatsapp_number }}</td>@endif
+                                @if ($visibleColumns['description'])
+                                    <td class="max-w-xs px-5 py-4 text-slate-600">
+                                        <div class="space-y-2">
+                                            <button
+                                                type="button"
+                                                class="block max-w-xs truncate text-left text-xs leading-5 hover:text-blue-700 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                                title="Klik untuk melihat ajuan lengkap"
+                                                @click="description = @js($ticket->description); showDescription = true"
+                                            >
+                                                {{ \Illuminate\Support\Str::limit($ticket->description, 80) }}
+                                            </button>
+                                            @if ($ticket->attachments->isNotEmpty())
+                                                <div class="flex flex-wrap gap-2">
+                                                    @foreach ($ticket->attachments as $attachment)
+                                                        <a
+                                                            href="{{ route('tickets.attachments.show', [$ticket, $attachment]) }}"
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            title="{{ $attachment->original_name }}"
+                                                            class="inline-flex max-w-56 items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-medium text-slate-600 transition hover:border-blue-200 hover:text-blue-700"
+                                                        >
+                                                            @if (str_starts_with($attachment->mime_type, 'image/'))
+                                                                <img src="{{ route('tickets.attachments.show', [$ticket, $attachment]) }}" alt="" loading="lazy" class="h-8 w-8 shrink-0 rounded object-cover">
+                                                            @else
+                                                                <svg class="h-4 w-4 shrink-0 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10Z" />
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 3v7h7m-11 4h6m-6 3h6" />
+                                                                </svg>
+                                                            @endif
+                                                            <span class="truncate">{{ \Illuminate\Support\Str::limit($attachment->original_name, 28) }}</span>
+                                                        </a>
+                                                    @endforeach
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </td>
+                                @endif
+                                @if ($visibleColumns['target'])<td class="px-5 py-4 text-slate-600">{{ $ticket->targetLabel() }}</td>@endif
                                 @if ($visibleColumns['status'])<td class="px-5 py-4"><span class="status-pill status-{{ $ticket->status->value }} text-xs font-medium">{{ $ticket->status->label() }}</span></td>@endif
                                 @if ($visibleColumns['new_comment'])
                                     <td class="px-5 py-4">
                                         @if ((auth()->user()->role === 'user' && $ticket->unread_by_user) || (auth()->user()->role === 'supervisor' && $ticket->unread_by_supervisor))
-                                            <span class="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">New Comment</span>
+                                            <span class="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">New Comment</span>
                                         @else
                                             <span class="text-gray-400">-</span>
                                         @endif
@@ -291,7 +406,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="border-t border-gray-200 px-5 py-3">{{ $tickets->withQueryString()->links() }}</div>
+            <div class="border-t border-slate-100 bg-white px-5 py-3">{{ $tickets->withQueryString()->links() }}</div>
         </div>
 
         <div
