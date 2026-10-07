@@ -26,7 +26,7 @@ class TicketFactory extends Factory
             'whatsapp_number' => '0812'.fake()->numerify('########'),
             'description' => fake()->sentence(),
             'priority' => fake()->randomElement(TicketPriority::cases()),
-            'target' => fake()->randomElement(TicketTarget::cases()),
+            'target' => fake()->randomElement(TicketTarget::cases())->value,
             'status' => TicketStatus::Pending,
         ];
     }

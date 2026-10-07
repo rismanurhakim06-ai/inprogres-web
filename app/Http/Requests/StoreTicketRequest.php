@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Enums\TicketPriority;
-use App\Enums\TicketTarget;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
@@ -30,7 +29,7 @@ class StoreTicketRequest extends FormRequest
             'whatsapp_number' => ['required', 'string', 'regex:/^[0-9+() -]{8,25}$/'],
             'description' => ['required', 'string', 'min:10', 'max:5000'],
             'priority' => ['required', new Enum(TicketPriority::class)],
-            'target' => ['required', new Enum(TicketTarget::class)],
+            'target' => ['required', 'string', 'max:255'],
         ];
     }
 }

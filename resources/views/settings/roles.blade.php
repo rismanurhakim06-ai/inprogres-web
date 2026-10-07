@@ -16,7 +16,7 @@
                 @csrf
                 <div class="border-b border-gray-200 px-5 py-4">
                     <h3 class="font-semibold text-gray-900">{{ auth()->user()->role === 'admin' ? 'Buat akun User' : 'Buat akun dengan role' }}</h3>
-                    <p class="mt-1 text-sm text-gray-500">{{ auth()->user()->role === 'admin' ? 'Admin hanya dapat membuat akun User.' : 'Tambahkan akun User, Admin, atau Supervisor.' }}</p>
+                    <p class="mt-1 text-sm text-gray-500">{{ auth()->user()->role === 'admin' ? 'Admin hanya dapat membuat akun User.' : 'Tambahkan akun User, Admin, Supervisor, atau Owner.' }}</p>
                 </div>
                 <div class="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
                     <div>

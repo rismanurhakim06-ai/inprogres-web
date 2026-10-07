@@ -21,7 +21,8 @@ class StaffUserManagementTest extends TestCase
             ->assertOk()
             ->assertSee('<option value="user"', false)
             ->assertDontSee('<option value="admin"', false)
-            ->assertDontSee('<option value="supervisor"', false);
+            ->assertDontSee('<option value="supervisor"', false)
+            ->assertDontSee('<option value="owner"', false);
 
         $this->post(route('settings.roles.users.store'), [
             'name' => 'User Baru',
@@ -35,11 +36,11 @@ class StaffUserManagementTest extends TestCase
         $this->assertTrue(Hash::check('Strong-password-123', User::query()->where('email', $email)->firstOrFail()->password));
     }
 
-    public function test_admin_cannot_create_admin_or_supervisor_accounts(): void
+    public function test_admin_cannot_create_admin_supervisor_or_owner_accounts(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
 
-        foreach (['admin', 'supervisor'] as $role) {
+        foreach (['admin', 'supervisor', 'owner'] as $role) {
             $email = $role.'-created@example.test';
 
             $this->actingAs($admin)
@@ -57,11 +58,16 @@ class StaffUserManagementTest extends TestCase
         }
     }
 
-    public function test_superadmin_can_create_admin_and_supervisor_accounts(): void
+    public function test_superadmin_can_create_admin_supervisor_and_owner_accounts(): void
     {
         $superadmin = User::factory()->create(['role' => 'superadmin']);
 
-        foreach (['admin', 'supervisor'] as $role) {
+        $this->actingAs($superadmin)
+            ->get(route('settings.roles.edit'))
+            ->assertOk()
+            ->assertSee('<option value="owner"', false);
+
+        foreach (['admin', 'supervisor', 'owner'] as $role) {
             $email = $role.'-created@example.test';
 
             $this->actingAs($superadmin)

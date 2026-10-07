@@ -44,7 +44,7 @@ class TicketWorkflowTest extends TestCase
             'whatsapp_number' => '081234567890',
             'description' => 'Mohon bantuan memperbarui halaman layanan.',
             'priority' => 'urgent',
-            'target' => 'lppm',
+            'target' => 'Portal Akademik Internal',
         ]);
 
         $ticket = Ticket::firstOrFail();
@@ -61,18 +61,26 @@ class TicketWorkflowTest extends TestCase
             ->assertSee('&#10003;', false)
             ->assertSee('action="'.route('tickets.store').'"', false)
             ->assertSee('name="description"', false)
+            ->assertSee('list="new-ticket-target-options"', false)
+            ->assertSee('value="Web LPPM"', false)
             ->assertSee('role="dialog"', false)
             ->assertSee('status-pending', false)
-            ->assertSee($ticket->ticket_number);
+            ->assertSee($ticket->ticket_number)
+            ->assertSee('Portal Akademik Internal');
         $this->get(route('home', ['ticket' => $ticket->ticket_number]))
             ->assertOk()
             ->assertSee($ticket->ticket_number)
+            ->assertSee('Portal Akademik Internal')
             ->assertSee('Belum disetujui');
 
         $this->assertSame(
             $user->id,
             $ticket->user_id,
         );
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'target' => 'Portal Akademik Internal',
+        ]);
     }
 
     public function test_ticket_is_saved_to_the_authenticated_user_not_the_selected_target_account(): void
@@ -193,14 +201,16 @@ class TicketWorkflowTest extends TestCase
                 'whatsapp_number' => '081234567890',
                 'description' => 'Deskripsi pengajuan yang sudah diperbarui.',
                 'priority' => 'urgent',
-                'target' => 'lppm',
+                'target' => 'Sistem Operasional Baru',
             ])
             ->assertRedirect(route('dashboard'));
 
         $this->assertDatabaseHas('tickets', [
             'id' => $ownedTicket->id,
+            'user_id' => $user->id,
             'requester_name' => 'Nama Baru',
             'description' => 'Deskripsi pengajuan yang sudah diperbarui.',
+            'target' => 'Sistem Operasional Baru',
         ]);
     }
 

@@ -51,11 +51,12 @@
 
                     <div>
                         <x-input-label for="target" value="Target sistem" />
-                        <select id="target" name="target" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                        <x-text-input id="target" name="target" list="target-options" class="mt-1 block w-full" :value="old('target', $ticket->targetLabel())" required maxlength="255" placeholder="Pilih atau ketik nama sistem" />
+                        <datalist id="target-options">
                             @foreach (\App\Enums\TicketTarget::cases() as $target)
-                                <option value="{{ $target->value }}" @selected(old('target', $ticket->target->value) === $target->value)>{{ $target->label() }}</option>
+                                <option value="{{ $target->label() }}"></option>
                             @endforeach
-                        </select>
+                        </datalist>
                         <x-input-error :messages="$errors->get('target')" class="mt-2" />
                     </div>
                 </div>

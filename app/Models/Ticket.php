@@ -26,12 +26,24 @@ class Ticket extends Model
     {
         return [
             'priority' => TicketPriority::class,
-            'target' => TicketTarget::class,
             'status' => TicketStatus::class,
             'completed_at' => 'datetime',
             'unread_by_user' => 'boolean',
             'unread_by_supervisor' => 'boolean',
         ];
+    }
+
+    public function targetLabel(): string
+    {
+        $target = $this->target;
+
+        if ($target instanceof TicketTarget) {
+            return $target->label();
+        }
+
+        $target = (string) $target;
+
+        return TicketTarget::tryFrom($target)?->label() ?? $target;
     }
 
     public function assignee(): BelongsTo

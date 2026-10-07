@@ -31,7 +31,7 @@
                     <div class="input-action"><input id="ticket" name="ticket" value="{{ request('ticket') }}" placeholder="Contoh: INP-260919-AB12C" required><button type="submit" class="icon-button" aria-label="Lacak tiket">→</button></div>
                 </form>
                 @if (request()->filled('ticket'))
-                    @if ($ticket)<div class="ticket-result"><div class="result-head"><span>{{ $ticket->ticket_number }}</span><span class="status-pill status-{{ $ticket->status->value }}">{{ $ticket->status->label() }}</span></div><strong>{{ $ticket->requester_name }}</strong><p>{{ $ticket->description }}</p><small>Diajukan {{ $ticket->created_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i') }} WIB · {{ $ticket->target->label() }}</small><small class="completion-date">Tanggal selesai: {{ $ticket->completed_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i') ?? 'Belum selesai' }} WIB</small></div>
+                    @if ($ticket)<div class="ticket-result"><div class="result-head"><span>{{ $ticket->ticket_number }}</span><span class="status-pill status-{{ $ticket->status->value }}">{{ $ticket->status->label() }}</span></div><strong>{{ $ticket->requester_name }}</strong><p>{{ $ticket->description }}</p><small>Diajukan {{ $ticket->created_at->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i') }} WIB · {{ $ticket->targetLabel() }}</small><small class="completion-date">Tanggal selesai: {{ $ticket->completed_at?->timezone('Asia/Jakarta')->translatedFormat('d M Y, H:i') ?? 'Belum selesai' }} WIB</small></div>
                     @else<div class="notice error">Nomor tiket tidak ditemukan. Periksa kembali penulisannya.</div>@endif
                 @endif
                 @if (auth()->user()?->role === 'user')

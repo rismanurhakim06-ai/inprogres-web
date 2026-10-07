@@ -72,7 +72,7 @@ class TelegramService
         $ticketNumber = htmlspecialchars((string) $ticket->ticket_number, ENT_QUOTES, 'UTF-8');
         $requesterName = htmlspecialchars((string) $ticket->requester_name, ENT_QUOTES, 'UTF-8');
         $whatsappNumber = htmlspecialchars((string) ($ticket->whatsapp_number ?? '-'), ENT_QUOTES, 'UTF-8');
-        $targetLabel = htmlspecialchars($ticket->target?->label() ?? (string) $ticket->target?->value ?? '-', ENT_QUOTES, 'UTF-8');
+        $targetLabel = htmlspecialchars($ticket->targetLabel(), ENT_QUOTES, 'UTF-8');
         $priorityLabel = htmlspecialchars($ticket->priority?->label() ?? (string) $ticket->priority?->value ?? '-', ENT_QUOTES, 'UTF-8');
         $createdAt = $ticket->created_at ? $ticket->created_at->format('d/m/Y H:i') : now()->format('d/m/Y H:i');
         $description = htmlspecialchars(Str::limit((string) $ticket->description, 350), ENT_QUOTES, 'UTF-8');

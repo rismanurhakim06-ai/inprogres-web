@@ -63,7 +63,7 @@ class TelegramNotificationTest extends TestCase
             'ticket_number' => 'TCK-20260929-TEST1',
             'requester_name' => 'Jane Doe',
             'whatsapp_number' => '08123456789',
-            'target' => TicketTarget::Lppm,
+            'target' => 'lppm',
             'priority' => TicketPriority::Urgent,
             'description' => 'Tolong cek & perbaiki error <script>alert(1)</script> pada portal.',
         ]);
@@ -77,6 +77,18 @@ class TelegramNotificationTest extends TestCase
         $this->assertStringContainsString(TicketTarget::Lppm->label(), $message);
         $this->assertStringContainsString(TicketPriority::Urgent->label(), $message);
         $this->assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $message);
+        $this->assertStringNotContainsString('<script>', $message);
+    }
+
+    public function test_telegram_service_escapes_a_custom_target(): void
+    {
+        $ticket = Ticket::factory()->create([
+            'target' => 'Portal <script>alert(1)</script>',
+        ]);
+
+        $message = (new TelegramService('dummy-token'))->formatTicketMessage($ticket);
+
+        $this->assertStringContainsString('Portal &lt;script&gt;alert(1)&lt;/script&gt;', $message);
         $this->assertStringNotContainsString('<script>', $message);
     }
 

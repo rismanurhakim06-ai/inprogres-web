@@ -109,14 +109,12 @@
                             </div>
                             <div>
                                 <label for="new-ticket-target" class="mb-1 block text-sm font-medium text-gray-700">Target sistem</label>
-                                <select id="new-ticket-target" name="target" required class="w-full rounded-md border-gray-300 text-sm focus:border-gray-700 focus:ring-gray-700">
-                                    <option value="">Pilih sistem</option>
-                                    <option value="lppm" @selected(old('target') === 'lppm')>Web LPPM</option>
-                                    <option value="lpm" @selected(old('target') === 'lpm')>Web LPM</option>
-                                    <option value="ma" @selected(old('target') === 'ma')>Web MA</option>
-                                    <option value="trpl" @selected(old('target') === 'trpl')>Web TRPL</option>
-                                    <option value="bk" @selected(old('target') === 'bk')>Web BK</option>
-                                </select>
+                                <input id="new-ticket-target" name="target" list="new-ticket-target-options" value="{{ old('target') }}" placeholder="Pilih atau ketik nama sistem" required maxlength="255" class="w-full rounded-md border-gray-300 text-sm focus:border-gray-700 focus:ring-gray-700">
+                                <datalist id="new-ticket-target-options">
+                                    @foreach (\App\Enums\TicketTarget::cases() as $target)
+                                        <option value="{{ $target->label() }}"></option>
+                                    @endforeach
+                                </datalist>
                             </div>
                             <div class="sm:col-span-2">
                                 <label for="new-ticket-description" class="mb-1 block text-sm font-medium text-gray-700">Isi ajuan</label>
@@ -190,7 +188,7 @@
 
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
             <div class="flex items-center justify-between gap-4 border-b border-gray-200 px-5 py-4">
-                <h3 class="font-semibold text-gray-900">{{ $selectedFilter === 'comments' ? 'Pengajuan yang dikomentari staf' : ($selectedStatus === 'all' ? (auth()->user()->role === 'user' ? 'Pengajuan saya' : 'Semua tiket') : match ($selectedStatus) { 'pending' => 'Pengajuan menunggu', 'in_progress' => 'Pengajuan sedang dikerjakan', 'completed' => 'Pengajuan selesai', default => 'Pengajuan' } ) }}</h3>
+                <h3 class="font-semibold text-gray-900">{{ $selectedFilter === 'comments' ? 'chat' : ($selectedStatus === 'all' ? (auth()->user()->role === 'user' ? 'Pengajuan saya' : 'Semua tiket') : match ($selectedStatus) { 'pending' => 'Pengajuan menunggu', 'in_progress' => 'Pengajuan sedang dikerjakan', 'completed' => 'Pengajuan selesai', default => 'Pengajuan' } ) }}</h3>
                 <div class="flex items-center gap-3">
                     @if (auth()->user()->role !== 'user')
                         <button type="button" class="whitespace-nowrap rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="showTicketSearch = true; $nextTick(() => $refs.ticketSearchInput.focus())" :aria-expanded="showTicketSearch.toString()" aria-controls="ticket-search-dialog">Cari Tiket</button>
@@ -245,7 +243,7 @@
                                         {{ \Illuminate\Support\Str::limit($ticket->description, 80) }}
                                     </button>
                                 </td>@endif
-                                @if ($visibleColumns['target'])<td class="px-5 py-4 text-gray-700">{{ $ticket->target->label() }}</td>@endif
+                                @if ($visibleColumns['target'])<td class="px-5 py-4 text-gray-700">{{ $ticket->targetLabel() }}</td>@endif
                                 @if ($visibleColumns['status'])<td class="px-5 py-4"><span class="status-pill status-{{ $ticket->status->value }} text-xs font-medium">{{ $ticket->status->label() }}</span></td>@endif
                                 @if ($visibleColumns['new_comment'])
                                     <td class="px-5 py-4">

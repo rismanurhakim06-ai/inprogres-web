@@ -13,7 +13,7 @@
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-4">
                 <div>
-                    <p class="text-sm text-gray-500">{{ $ticket->requester_name }} · {{ $ticket->target->label() }}</p>
+                    <p class="text-sm text-gray-500">{{ $ticket->requester_name }} · {{ $ticket->targetLabel() }}</p>
                     <p class="mt-1 text-sm text-gray-700">{{ $ticket->description }}</p>
                 </div>
                 <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">{{ $ticket->status->label() }}</span>

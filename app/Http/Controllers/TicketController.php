@@ -3,14 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TicketStatus;
-use App\Enums\TicketTarget;
 use App\Http\Requests\StoreTicketCommentRequest;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Requests\UpdateOwnTicketRequest;
 use App\Http\Requests\UpdateTicketRequest;
 use App\Models\RoleDashboardSetting;
 use App\Models\Ticket;
-use App\Models\User;
 use App\Services\TelegramService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -148,16 +146,7 @@ class TicketController extends Controller
 
     public function updateOwn(UpdateOwnTicketRequest $request, Ticket $ticket): RedirectResponse
     {
-        $validated = $request->validated();
-        $target = TicketTarget::from($validated['target']);
-        $targetUser = User::where('role', 'user')
-            ->where('target', $target->value)
-            ->firstOrFail();
-
-        $ticket->update([
-            ...$validated,
-            'user_id' => $targetUser->id,
-        ]);
+        $ticket->update($request->validated());
 
         return redirect()->route('dashboard')->with('success', "Pengajuan {$ticket->ticket_number} diperbarui.");
     }

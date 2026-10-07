@@ -54,6 +54,7 @@ class RoleDashboardSetting extends Model
         'user' => 'User',
         'admin' => 'Admin',
         'supervisor' => 'Supervisor',
+        'owner' => 'Owner',
     ];
 
     protected $fillable = ['role', 'features'];
