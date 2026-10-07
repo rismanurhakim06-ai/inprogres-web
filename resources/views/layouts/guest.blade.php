@@ -1,3 +1,8 @@
+@props([
+    'title' => 'Masuk ke akun',
+    'description' => 'Gunakan email dan kata sandi untuk melanjutkan ke portal layanan.',
+])
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
@@ -5,26 +10,35 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>{{ $title }} | {{ config('app.name', 'Polmanda Helpdesk') }}</title>
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-
-        <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans text-gray-900 antialiased">
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
-            <div>
-                <a href="/">
-                    <x-application-logo class="w-20 h-20 fill-current text-gray-500" />
-                </a>
-            </div>
+    <body class="auth-shell" style="--auth-photo: url('{{ asset('img/desainpolmanda.jpg') }}')">
+        <header class="auth-header">
+            <a class="auth-brand" href="{{ route('home') }}">
+                <img src="{{ asset('img/polmanda2.png') }}" alt="Polmanda">
+                <span>
+                    <strong>Ticket Polmanda</strong>
+                    <small>HELPDESK PORTAL</small>
+                </span>
+            </a>
+        </header>
 
-            <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
+        <main class="auth-main">
+            <section class="auth-card" aria-labelledby="auth-title">
+                <div class="auth-mark">
+                    <img src="{{ asset('img/polmanda2.png') }}" alt="">
+                </div>
+                <h1 id="auth-title">{{ $title }}</h1>
+                <p class="auth-description">{{ $description }}</p>
                 {{ $slot }}
-            </div>
-        </div>
+            </section>
+        </main>
+
+        <footer class="auth-footer">
+            <span>© 2026 Politeknik Terpadu. Seluruh hak cipta dilindungi undang-undang.</span>
+            <span class="auth-footer-links">Kebijakan Privasi <i>·</i> Syarat &amp; Ketentuan <i>·</i> Status Sistem</span>
+        </footer>
     </body>
 </html>

@@ -1,68 +1,48 @@
-<x-guest-layout>
-    <form method="POST" action="{{ route('register') }}">
+<x-guest-layout title="Buat akun" description="Lengkapi data berikut untuk mendaftar ke portal layanan Polmanda.">
+    <form class="auth-form auth-register-form" method="POST" action="{{ route('register') }}">
         @csrf
 
-        <!-- Name -->
-        <div>
-            <x-input-label for="name" value="Nama" />
-            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus autocomplete="name" />
-            <x-input-error :messages="$errors->get('name')" class="mt-2" />
+        <div class="auth-field">
+            <x-input-label for="name" value="Nama" class="auth-label" />
+            <x-text-input id="name" class="auth-input block w-full" type="text" name="name" :value="old('name')" required autofocus autocomplete="name" />
+            <x-input-error :messages="$errors->get('name')" class="auth-error" />
         </div>
 
-        <!-- Email Address -->
-        <div class="mt-4">
-            <x-input-label for="email" value="Email" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+        <div class="auth-field">
+            <x-input-label for="email" value="Email" class="auth-label" />
+            <x-text-input id="email" class="auth-input block w-full" type="email" name="email" :value="old('email')" placeholder="nama@polmanda.ac.id" required autocomplete="username" />
+            <x-input-error :messages="$errors->get('email')" class="auth-error" />
         </div>
 
-        <!-- Phone Number -->
-        <div class="mt-4">
-            <x-input-label for="phone_number" value="Nomor Telepon (Terdaftar di Telegram)" />
-            <x-text-input id="phone_number" class="block mt-1 w-full" type="tel" name="phone_number" :value="old('phone_number')" placeholder="Contoh: 08123456789" autocomplete="tel" />
-            <p class="mt-1 text-xs text-gray-500">Nomor telepon aktif yang sudah terdaftar sebagai pengguna di Telegram.</p>
-            <x-input-error :messages="$errors->get('phone_number')" class="mt-2" />
+        <div class="auth-field">
+            <x-input-label for="phone_number" value="Nomor Telepon (Terdaftar di Telegram)" class="auth-label" />
+            <x-text-input id="phone_number" class="auth-input block w-full" type="tel" name="phone_number" :value="old('phone_number')" placeholder="Contoh: 08123456789" autocomplete="tel" />
+            <p class="auth-help">Nomor telepon aktif yang sudah terdaftar sebagai pengguna di Telegram.</p>
+            <x-input-error :messages="$errors->get('phone_number')" class="auth-error" />
         </div>
 
-        <!-- Telegram Chat ID -->
-        <div class="mt-4">
-            <x-input-label for="telegram_chat_id" value="ID Chat Telegram (Opsional)" />
-            <x-text-input id="telegram_chat_id" class="block mt-1 w-full" type="text" name="telegram_chat_id" :value="old('telegram_chat_id')" placeholder="Contoh: 123456789" />
-            <p class="mt-1 text-xs text-gray-500">Ketik /start di bot Anda atau cek ID via @userinfobot di Telegram.</p>
-            <x-input-error :messages="$errors->get('telegram_chat_id')" class="mt-2" />
+        <div class="auth-field">
+            <x-input-label for="telegram_chat_id" value="ID Chat Telegram (Opsional)" class="auth-label" />
+            <x-text-input id="telegram_chat_id" class="auth-input block w-full" type="text" name="telegram_chat_id" :value="old('telegram_chat_id')" placeholder="Contoh: 123456789" />
+            <p class="auth-help">Ketik /start di bot Anda atau cek ID via @userinfobot di Telegram.</p>
+            <x-input-error :messages="$errors->get('telegram_chat_id')" class="auth-error" />
         </div>
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" value="Kata sandi" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="new-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+        <div class="auth-field">
+            <x-input-label for="password" value="Kata sandi" class="auth-label" />
+            <x-text-input id="password" class="auth-input block w-full" type="password" name="password" required autocomplete="new-password" />
+            <x-input-error :messages="$errors->get('password')" class="auth-error" />
         </div>
 
-        <!-- Confirm Password -->
-        <div class="mt-4">
-            <x-input-label for="password_confirmation" value="Konfirmasi kata sandi" />
-
-            <x-text-input id="password_confirmation" class="block mt-1 w-full"
-                            type="password"
-                            name="password_confirmation" required autocomplete="new-password" />
-
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+        <div class="auth-field">
+            <x-input-label for="password_confirmation" value="Konfirmasi kata sandi" class="auth-label" />
+            <x-text-input id="password_confirmation" class="auth-input block w-full" type="password" name="password_confirmation" required autocomplete="new-password" />
+            <x-input-error :messages="$errors->get('password_confirmation')" class="auth-error" />
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}">
-                Sudah punya akun?
-            </a>
-
-            <x-primary-button class="ms-4">
-                Daftar
-            </x-primary-button>
-        </div>
+        <x-primary-button class="auth-submit">Daftar <span aria-hidden="true">→</span></x-primary-button>
     </form>
+
+    <div class="auth-divider"><span>ATAU</span></div>
+    <p class="auth-account-prompt">Sudah punya akun? <a class="auth-link" href="{{ route('login') }}">Masuk</a></p>
 </x-guest-layout>
