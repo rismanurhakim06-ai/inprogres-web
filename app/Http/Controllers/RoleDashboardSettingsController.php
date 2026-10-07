@@ -32,6 +32,8 @@ class RoleDashboardSettingsController extends Controller
             'roleLabels' => RoleDashboardSetting::ROLE_LABELS,
             'summaryFeatures' => RoleDashboardSetting::SUMMARY_FEATURES,
             'tableFeatures' => RoleDashboardSetting::TABLE_FEATURES,
+            'notificationRoles' => RoleDashboardSetting::TELEGRAM_NOTIFICATION_ROLES,
+            'notificationFeatures' => RoleDashboardSetting::NOTIFICATION_FEATURES,
             'creatableRoles' => $creatableRoles,
         ]);
     }
@@ -68,6 +70,6 @@ class RoleDashboardSettingsController extends Controller
             );
         }
 
-        return redirect()->route('settings.roles.edit')->with('success', 'Pengaturan tampilan berhasil disimpan.');
+        return redirect()->route('settings.roles.edit')->with('success', 'Pengaturan tampilan dan notifikasi berhasil disimpan.');
     }
 }

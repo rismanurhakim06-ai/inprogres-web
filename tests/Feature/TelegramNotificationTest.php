@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\TicketPriority;
 use App\Enums\TicketTarget;
+use App\Models\RoleDashboardSetting;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\TelegramService;
@@ -109,11 +110,10 @@ class TelegramNotificationTest extends TestCase
             'telegram_chat_id' => '200002',
         ]);
 
-        // 3. Superadmin with chat id in phone_number (fallback test)
+        // 3. Superadmin with Telegram chat ID
         User::factory()->create([
             'role' => 'superadmin',
-            'phone_number' => '300003',
-            'telegram_chat_id' => null,
+            'telegram_chat_id' => '300003',
         ]);
 
         // 4. Regular user with telegram_chat_id (should NOT receive admin notification)
@@ -126,7 +126,7 @@ class TelegramNotificationTest extends TestCase
         User::factory()->create([
             'role' => 'admin',
             'telegram_chat_id' => null,
-            'phone_number' => null,
+            'phone_number' => '081234567890',
         ]);
 
         // Creating user who submits ticket
@@ -156,6 +156,82 @@ class TelegramNotificationTest extends TestCase
                 && str_contains($request['text'], $ticket->ticket_number)
                 && str_contains($request['text'], 'Ahmad Kasim');
         });
+    }
+
+    public function test_superadmin_can_select_telegram_recipients_for_new_tickets(): void
+    {
+        Config::set('services.telegram.bot_token', 'test-bot-token');
+        Config::set('services.telegram.default_chat_id', null);
+        Http::fake();
+
+        $superadmin = User::factory()->create([
+            'role' => 'superadmin',
+            'telegram_chat_id' => '300003',
+        ]);
+        User::factory()->create(['role' => 'admin', 'telegram_chat_id' => '100001']);
+        User::factory()->create(['role' => 'supervisor', 'telegram_chat_id' => '200002']);
+
+        $settings = [];
+        foreach (RoleDashboardSetting::ROLE_LABELS as $role => $label) {
+            $settings[$role] = ['_present' => '1'];
+        }
+        $settings['supervisor']['telegram_ticket_notifications'] = '1';
+
+        $this->actingAs($superadmin)
+            ->put(route('settings.roles.update'), ['settings' => $settings])
+            ->assertRedirect(route('settings.roles.edit'));
+
+        $applicant = User::factory()->create(['role' => 'user']);
+
+        $this->actingAs($applicant)->post(route('tickets.store'), [
+            'requester_name' => 'Rina Rahma',
+            'whatsapp_number' => '081234567890',
+            'description' => 'Permintaan bantuan teknis.',
+            'priority' => 'urgent',
+            'target' => 'lppm',
+        ])->assertRedirect(route('dashboard'));
+
+        $ticket = Ticket::where('requester_name', 'Rina Rahma')->firstOrFail();
+
+        Http::assertSentCount(1);
+        Http::assertSent(fn ($request): bool => $request['chat_id'] === '200002'
+            && str_contains($request['text'], $ticket->ticket_number));
+    }
+
+    public function test_registration_notification_only_reaches_selected_roles(): void
+    {
+        Config::set('services.telegram.bot_token', 'test-bot-token');
+        Config::set('services.telegram.default_chat_id', null);
+        Http::fake();
+
+        User::factory()->create(['role' => 'admin', 'telegram_chat_id' => '100001']);
+        User::factory()->create(['role' => 'supervisor', 'telegram_chat_id' => '200002']);
+        User::factory()->create(['role' => 'superadmin', 'telegram_chat_id' => '300003']);
+
+        foreach (RoleDashboardSetting::TELEGRAM_NOTIFICATION_ROLES as $role => $label) {
+            $features = RoleDashboardSetting::defaultFeaturesFor($role);
+            $features['telegram_registration_notifications'] = $role === 'admin';
+
+            RoleDashboardSetting::query()->updateOrCreate(
+                ['role' => $role],
+                ['features' => $features],
+            );
+        }
+
+        $this->post(route('register'), [
+            'name' => '<script>Rina</script>',
+            'email' => 'rina@example.com',
+            'phone_number' => '081234567890',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])->assertRedirect(route('login'));
+
+        $this->assertDatabaseHas('users', ['email' => 'rina@example.com']);
+        Http::assertSentCount(1);
+        Http::assertSent(fn ($request): bool => $request['chat_id'] === '100001'
+            && str_contains($request['text'], '&lt;script&gt;Rina&lt;/script&gt;')
+            && str_contains($request['text'], 'rina@example.com')
+            && str_contains($request['text'], 'Menunggu persetujuan'));
     }
 
     public function test_telegram_notification_is_skipped_silently_if_token_not_set(): void

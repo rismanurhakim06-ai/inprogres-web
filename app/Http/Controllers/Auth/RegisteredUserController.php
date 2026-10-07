@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\TelegramService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,7 +28,7 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, TelegramService $telegramService): RedirectResponse
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -48,6 +49,7 @@ class RegisteredUserController extends Controller
         ]);
 
         event(new Registered($user));
+        $telegramService->sendRegistrationNotification($user);
 
         return redirect()->route('login')->with('status', 'Pendaftaran berhasil. Akun Anda sedang menunggu persetujuan admin atau superadmin.');
     }

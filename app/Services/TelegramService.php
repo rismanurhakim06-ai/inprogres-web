@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\RoleDashboardSetting;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
@@ -101,12 +102,69 @@ class TelegramService
             return [];
         }
 
-        $users = User::query()
-            ->whereIn('role', ['admin', 'supervisor', 'superadmin'])
-            ->get();
+        return $this->sendNotificationToEligibleRecipients(
+            'telegram_ticket_notifications',
+            $this->formatTicketMessage($ticket),
+            ['ticket_number' => $ticket->ticket_number],
+        );
+    }
 
-        /** @var array<int, string> $chatIds */
-        $chatIds = $users
+    public function formatRegistrationMessage(User $user): string
+    {
+        $name = htmlspecialchars((string) $user->name, ENT_QUOTES, 'UTF-8');
+        $email = htmlspecialchars((string) $user->email, ENT_QUOTES, 'UTF-8');
+        $phoneNumber = htmlspecialchars((string) ($user->phone_number ?? '-'), ENT_QUOTES, 'UTF-8');
+        $createdAt = $user->created_at?->format('d/m/Y H:i') ?? now()->format('d/m/Y H:i');
+        $approvalUrl = route('account-approvals.index');
+
+        return "👤 <b>REGISTRASI AKUN BARU</b>\n\n"
+            ."🧑 <b>Nama:</b> {$name}\n"
+            ."📧 <b>Email:</b> {$email}\n"
+            ."📱 <b>No. Telepon:</b> {$phoneNumber}\n"
+            ."🕒 <b>Waktu:</b> {$createdAt} WIB\n"
+            ."⏳ <b>Status:</b> Menunggu persetujuan\n\n"
+            ."🔗 <a href=\"{$approvalUrl}\">Tinjau pendaftaran</a>";
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    public function sendRegistrationNotification(User $user): array
+    {
+        if (! $this->isConfigured()) {
+            return [];
+        }
+
+        return $this->sendNotificationToEligibleRecipients(
+            'telegram_registration_notifications',
+            $this->formatRegistrationMessage($user),
+            ['user_id' => $user->id],
+        );
+    }
+
+    /**
+     * @param  array<string, int|string>  $context
+     * @return array<string, bool>
+     */
+    private function sendNotificationToEligibleRecipients(string $feature, string $message, array $context): array
+    {
+        $settingsByRole = RoleDashboardSetting::query()
+            ->whereIn('role', array_keys(RoleDashboardSetting::TELEGRAM_NOTIFICATION_ROLES))
+            ->get()
+            ->keyBy('role');
+
+        $recipientRoles = collect(RoleDashboardSetting::TELEGRAM_NOTIFICATION_ROLES)
+            ->filter(function (string $label, string $role) use ($feature, $settingsByRole): bool {
+                $features = $settingsByRole->get($role)?->features ?? RoleDashboardSetting::defaultFeaturesFor($role);
+
+                return (bool) ($features[$feature] ?? false);
+            })
+            ->keys()
+            ->all();
+
+        $chatIds = User::query()
+            ->whereIn('role', $recipientRoles)
+            ->get()
             ->map(fn (User $user): ?string => $user->getTelegramChatId())
             ->filter(fn (?string $chatId): bool => ! empty($chatId))
             ->unique()
@@ -119,14 +177,11 @@ class TelegramService
         }
 
         if (empty($chatIds)) {
-            Log::info('No eligible Telegram Chat IDs found for Admin and Supervisor.', [
-                'ticket_number' => $ticket->ticket_number,
-            ]);
+            Log::info('No eligible Telegram Chat IDs found for notification.', $context);
 
             return [];
         }
 
-        $message = $this->formatTicketMessage($ticket);
         $results = [];
 
         foreach ($chatIds as $chatId) {

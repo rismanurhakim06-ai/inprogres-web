@@ -114,6 +114,43 @@
                 </table>
             </div>
 
+            <div class="border-t border-gray-200 px-5 py-4">
+                <h4 class="font-semibold text-gray-900">Penerima Notifikasi Telegram</h4>
+                <p class="mt-1 text-sm text-gray-500">Centang role yang menerima notifikasi untuk masing-masing aktivitas.</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[560px] text-left text-sm">
+                    <thead class="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+                        <tr>
+                            <th scope="col" class="px-5 py-3">Aktivitas</th>
+                            @foreach ($notificationRoles as $role => $label)
+                                <th scope="col" class="px-5 py-3 text-center">{{ $label }}</th>
+                            @endforeach
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach ($notificationFeatures as $feature => $label)
+                            <tr>
+                                <th scope="row" class="px-5 py-4 font-medium text-gray-900">{{ $label }}</th>
+                                @foreach ($notificationRoles as $role => $roleLabel)
+                                    <td class="px-5 py-4 text-center">
+                                        <input type="hidden" name="settings[{{ $role }}][{{ $feature }}]" value="0">
+                                        <input
+                                            type="checkbox"
+                                            name="settings[{{ $role }}][{{ $feature }}]"
+                                            value="1"
+                                            aria-label="{{ $roleLabel }}: {{ $label }}"
+                                            @checked($settingsByRole[$role]->features[$feature] ?? false)
+                                            class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-700"
+                                        >
+                                    </td>
+                                @endforeach
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
         </form>
         @endif
     </div>

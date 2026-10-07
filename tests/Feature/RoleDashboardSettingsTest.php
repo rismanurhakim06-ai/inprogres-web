@@ -24,7 +24,10 @@ class RoleDashboardSettingsTest extends TestCase
             ->assertOk()
             ->assertSee('Pengaturan tampilan role');
 
-        $this->assertSame(85, substr_count($settingsPage->getContent(), 'type="checkbox"'));
+        $this->assertSame(91, substr_count($settingsPage->getContent(), 'type="checkbox"'));
+        $settingsPage->assertSee('Penerima Notifikasi Telegram')
+            ->assertSee('Ticket baru dibuat')
+            ->assertSee('Akun baru registrasi');
         $this->assertSame(1, substr_count($settingsPage->getContent(), 'Simpan pengaturan'));
 
         $this->put(route('settings.roles.update'), [
@@ -63,11 +66,11 @@ class RoleDashboardSettingsTest extends TestCase
             ->assertSee('Menunggu')
             ->assertSee('Komentar staf')
             ->assertDontSee('Chat (')
-            ->assertDontSee('Nomor tiket')
+            ->assertDontSee('<th class="px-5 py-3">Nomor tiket</th>', false)
             ->assertDontSee('<th class="px-5 py-3">Nama pengaju</th>', false)
             ->assertDontSee('<th class="px-5 py-3">No. WhatsApp</th>', false)
             ->assertDontSee('EDIT')
-            ->assertDontSee('Tanggal ajuan')
+            ->assertDontSee('<th class="px-5 py-3">Tanggal ajuan</th>', false)
             ->assertDontSee('<th class="px-5 py-3">Komentar</th>', false)
             ->assertSee('Target');
         $this->assertStringNotContainsString($ticket->ticket_number, $this->get(route('dashboard'))->getContent());

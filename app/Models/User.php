@@ -40,15 +40,7 @@ class User extends Authenticatable
 
     public function getTelegramChatId(): ?string
     {
-        if (! empty($this->telegram_chat_id)) {
-            return (string) $this->telegram_chat_id;
-        }
-
-        if (! empty($this->phone_number) && (preg_match('/^-?\d+$/', trim($this->phone_number)) || str_starts_with(trim($this->phone_number), '@'))) {
-            return trim($this->phone_number);
-        }
-
-        return null;
+        return empty($this->telegram_chat_id) ? null : (string) $this->telegram_chat_id;
     }
 
     public function tickets(): HasMany

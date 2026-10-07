@@ -37,17 +37,24 @@ class RoleDashboardSetting extends Model
         'actions' => 'Aksi',
     ];
 
+    public const TELEGRAM_NOTIFICATION_ROLES = [
+        'supervisor' => 'Supervisor',
+        'admin' => 'Admin',
+        'superadmin' => 'Superadmin',
+    ];
+
     public const NOTIFICATION_FEATURES = [
-        'telegram_notifications' => 'Notifikasi Telegram (Tiket masuk)',
+        'telegram_ticket_notifications' => 'Ticket baru dibuat',
+        'telegram_registration_notifications' => 'Akun baru registrasi',
     ];
 
     public const FEATURES = [...self::SUMMARY_FEATURES, ...self::TABLE_FEATURES, ...self::NOTIFICATION_FEATURES];
 
     public const ROLE_FEATURES = [
-        'admin' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'completed_at', 'actions', 'telegram_notifications'],
+        'admin' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'completed_at', 'actions', 'telegram_ticket_notifications', 'telegram_registration_notifications'],
         'user' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'new_comment', 'completed_at', 'edit_submission'],
-        'supervisor' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'new_comment', 'completed_at', 'actions', 'telegram_notifications'],
-        'owner' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'completed_at', 'actions', 'telegram_notifications'],
+        'supervisor' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'new_comment', 'completed_at', 'actions', 'telegram_ticket_notifications', 'telegram_registration_notifications'],
+        'owner' => ['ticket_number', 'created_at', 'requester_name', 'whatsapp_number', 'description', 'target', 'status', 'comment_tools', 'completed_at', 'actions'],
     ];
 
     public const CREATABLE_ROLES = [
